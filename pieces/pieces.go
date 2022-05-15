@@ -317,6 +317,18 @@ func GetBinPos(row uint64, col uint64) uint64 {
 	return uint64(math.Pow(2, float64(8*row+col)))
 }
 
+func GetPositionsFromBoard(piece uint64) []uint64 {
+	res := []uint64{}
+	var curr, np uint64
+	for piece != 0 {
+		np = piece&(piece-1)
+		curr = np^piece
+		res = append(res, curr)
+		piece = np
+	}
+	return res
+}
+
 
 
 func PosTable() map[uint64]uint64 {

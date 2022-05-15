@@ -1,7 +1,6 @@
-package agent
+package game
 
-import game
 
-type Agent struct {
-	QValues map[Pos]float
+type Game struct {
+	
 }

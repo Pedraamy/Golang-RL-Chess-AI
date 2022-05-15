@@ -4,6 +4,7 @@ import (
 	"math"
 	"fmt"
 	"strconv"
+	"github.com/jinzhu/copier"
 )
 
 var (
@@ -32,7 +33,16 @@ type State struct {
 	BRRmoved uint8
 }
 
+type Move struct {
+	Name uint8
+	Piece uint64
+	Start uint64
+	End uint64
+}
 
+func NewMove(name uint8, piece uint64, start uint64, end uint64) *Move {
+	return &Move{name, piece, start, end}
+}
 type Game struct {
 	WhitePieces map[string]State
 	BlackPieces map[string]State	
@@ -69,22 +79,7 @@ func NewBoard() *State {
 	var BN uint64 = 1<<57 | 1<<62
 	var BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
 	var No uint8 = 0
-	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BN, BP, No, No, No, No, No, No}
-}
-
-
-func (st *State) Eval() int {
-
-}
-
-func 
-
-func (game *Game) GetMoves() []int {
-	return []int{}
-}
-
-func (st *State) GenMovesKing() {
-
+	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, No, No, No, No, No, No}
 }
 
 func (st *State) GenMovesKnight() {
@@ -112,10 +107,64 @@ func (st *State) AllBlackPieces() uint64 {
 	return st.BK|st.BQ|st.BR|st.BB|st.BN|st.BP
 }
 
-func (st *State) StateFromMove(piece uint64) *State {
+func (st *State) StateFromMoveWhite(name uint8, piece uint64, start uint64, end uint64) *State {
+	np := piece&(^start)
+	np |= end
+	ns := &State{}
 
-	return &State{st.White^1, }
+	copier.Copy(ns, st)
+	if name == 0 {
+		ns.WK = np
+	} else if name == 1 {
+		ns.WQ = np
+	} else if name == 2 {
+		ns.WR = np
+	} else if name == 3 {
+		ns.WB = np
+	} else if name == 4 {
+		ns.WN = np
+	} else {
+		ns.WP = np
+	}
+	ns.BK &= ^end
+	ns.BQ &= ^end
+	ns.BR &= ^end
+	ns.BB &= ^end
+	ns.BN &= ^end
+	ns.BP &= ^end
+	return ns
 }
+
+
+func (st *State) StateFromMoveBlack(name uint8, piece uint64, start uint64, end uint64) *State {
+	np := piece&(^start)
+	np |= end
+	ns := &State{}
+
+	copier.Copy(ns, st)
+	ns.White ^= 1
+	if name == 0 {
+		ns.BK = np
+	} else if name == 1 {
+		ns.BQ = np
+	} else if name == 2 {
+		ns.BR = np
+	} else if name == 3 {
+		ns.BB = np
+	} else if name == 4 {
+		ns.BN = np
+	} else {
+		ns.BP = np
+	}
+	ns.WK &= ^end
+	ns.WQ &= ^end
+	ns.WR &= ^end
+	ns.WB &= ^end
+	ns.WN &= ^end
+	ns.WP &= ^end
+	return ns
+}
+
 
 func GetPositionsFromBoard(piece uint64) []uint64 {
 	res := []uint64{}
