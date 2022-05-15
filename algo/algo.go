@@ -2,6 +2,7 @@ package algo
 
 import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/move"
 )
 
 func BestMove {
@@ -255,13 +256,15 @@ func Eval(st *State) float64 {
 
 }
 
-func RandomMove(st *State) *State {
-
-	possibleMoves = 
-	kings := pieces.GetPositionsFromBoard(st.WK)
-	for _, k := range kings {
-		moves := pieces.KingMoves(k, white, black)
+func RandomMove(st *State) *Move {
+	var moves []*Move
+	if st.White == 1 {
+		moves = GetAllMovesWhite(st)
+	} else {
+		moves = GetAllMovesBlack(st)
 	}
+	
+
 }
 
 func GetAllMovesWhite(st *State) []*Move {
@@ -308,85 +311,72 @@ func GetAllMovesWhite(st *State) []*Move {
 			res = append(res, move.NewMove(4, knights, n, m))
 		}
 	}
-	//Pawn
+	//Pawns
 	rooks := pieces.GetPositionsFromBoard(st.WP)
 	for _, p := range pawns {
 		moves := pieces.RookMoves(p, white, black)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(5, pawns, p, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
-			}
+			res = append(res, move.NewMove(5, pawns, p, m))
 		}
 	}
-	
-	//Queens
-	queens := pieces.GetPositionsFromBoard(st.WQ)
-	for _, q := range queens {
-		moves := pieces.QueenMoves(q, white, black)
+
+	return res
+}
+
+func GetAllMovesBlack(st *State) []*Move {
+	res := []*Move{}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	//King
+	kings := pieces.GetPositionsFromBoard(st.BK)
+	for _, k := range kings {
+		moves := pieces.KingMoves(k, black, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(1, queens, q, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
+			res = append(res, move.NewMove(0, kings, k, m))
 			}
+		}
+	//Queens
+	queens := pieces.GetPositionsFromBoard(st.BQ)
+	for _, q := range queens {
+		moves := pieces.QueenMoves(q, black, white)
+		for _, m := range moves {
+			res = append(res, move.NewMove(1, queens, q, m))
 		}
 	}
 	//Rooks
-	rooks := pieces.GetPositionsFromBoard(st.WR)
+	rooks := pieces.GetPositionsFromBoard(st.BR)
 	for _, r := range rooks {
-		moves := pieces.RookMoves(r, white, black)
+		moves := pieces.RookMoves(r, black, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(2, rooks, r, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
-			}
+			res = append(res, move.NewMove(2, rooks, r, m))
 		}
 	}
 	//Bishops
-	bishops := pieces.GetPositionsFromBoard(st.WB)
+	bishops := pieces.GetPositionsFromBoard(st.BB)
 	for _, b := range bishops {
-		moves := pieces.BishopMoves(b, white, black)
+		moves := pieces.BishopMoves(b, black, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(3, bishops, b, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
-			}
+			res = append(res, move.NewMove(3, bishops, b, m))
 		}
 	}
 	//Knights
-	knights := pieces.GetPositionsFromBoard(st.WN)
+	knights := pieces.GetPositionsFromBoard(st.BN)
 	for _, n := range knights {
-		moves := pieces.KnightMoves(n, white, black)
+		moves := pieces.KnightMoves(n, black, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(4, knights, n, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
-			}
+			res = append(res, move.NewMove(4, knights, n, m))
 		}
 	}
-	//Pawn
-	rooks := pieces.GetPositionsFromBoard(st.WP)
+	//Pawns
+	rooks := pieces.GetPositionsFromBoard(st.BP)
 	for _, p := range pawns {
-		moves := pieces.RookMoves(p, white, black)
+		moves := pieces.RookMoves(p, black, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(5, pawns, p, m)
-			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
-			alpha = Max2(alpha, res)
-			if alpha >= beta {
-				return res
-			}
+			res = append(res, move.NewMove(5, pawns, p, m))
 		}
 	}
+
+	return res
 }
 
 func Max2(f1 float64, f2 float64) float64 {
