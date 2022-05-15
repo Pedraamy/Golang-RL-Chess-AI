@@ -264,6 +264,131 @@ func RandomMove(st *State) *State {
 	}
 }
 
+func GetAllMovesWhite(st *State) []*Move {
+	res := []*Move{}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	//King
+	kings := pieces.GetPositionsFromBoard(st.WK)
+	for _, k := range kings {
+		moves := pieces.KingMoves(k, white, black)
+		for _, m := range moves {
+			res = append(res, move.NewMove(0, kings, k, m))
+			}
+		}
+	//Queens
+	queens := pieces.GetPositionsFromBoard(st.WQ)
+	for _, q := range queens {
+		moves := pieces.QueenMoves(q, white, black)
+		for _, m := range moves {
+			res = append(res, move.NewMove(1, queens, q, m))
+		}
+	}
+	//Rooks
+	rooks := pieces.GetPositionsFromBoard(st.WR)
+	for _, r := range rooks {
+		moves := pieces.RookMoves(r, white, black)
+		for _, m := range moves {
+			res = append(res, move.NewMove(2, rooks, r, m))
+		}
+	}
+	//Bishops
+	bishops := pieces.GetPositionsFromBoard(st.WB)
+	for _, b := range bishops {
+		moves := pieces.BishopMoves(b, white, black)
+		for _, m := range moves {
+			res = append(res, move.NewMove(3, bishops, b, m))
+		}
+	}
+	//Knights
+	knights := pieces.GetPositionsFromBoard(st.WN)
+	for _, n := range knights {
+		moves := pieces.KnightMoves(n, white, black)
+		for _, m := range moves {
+			res = append(res, move.NewMove(4, knights, n, m))
+		}
+	}
+	//Pawn
+	rooks := pieces.GetPositionsFromBoard(st.WP)
+	for _, p := range pawns {
+		moves := pieces.RookMoves(p, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(5, pawns, p, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+	
+	//Queens
+	queens := pieces.GetPositionsFromBoard(st.WQ)
+	for _, q := range queens {
+		moves := pieces.QueenMoves(q, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(1, queens, q, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+	//Rooks
+	rooks := pieces.GetPositionsFromBoard(st.WR)
+	for _, r := range rooks {
+		moves := pieces.RookMoves(r, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(2, rooks, r, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+	//Bishops
+	bishops := pieces.GetPositionsFromBoard(st.WB)
+	for _, b := range bishops {
+		moves := pieces.BishopMoves(b, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(3, bishops, b, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+	//Knights
+	knights := pieces.GetPositionsFromBoard(st.WN)
+	for _, n := range knights {
+		moves := pieces.KnightMoves(n, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(4, knights, n, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+	//Pawn
+	rooks := pieces.GetPositionsFromBoard(st.WP)
+	for _, p := range pawns {
+		moves := pieces.RookMoves(p, white, black)
+		for _, m := range moves {
+			curr := st.StateFromMoveWhite(5, pawns, p, m)
+			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
+			alpha = Max2(alpha, res)
+			if alpha >= beta {
+				return res
+			}
+		}
+	}
+}
+
 func Max2(f1 float64, f2 float64) float64 {
 	if f2 > f1 {
 		return f2
