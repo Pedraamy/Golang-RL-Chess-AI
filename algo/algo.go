@@ -2,27 +2,120 @@ package algo
 
 import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
-	"github.com/Pedraamy/Golang-RL-Chess-AI/move"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
+	"math/rand"
+    "time"
 )
 
-func BestMove {
 
+func BestMove (st *state.State, depth int) *state.Move {
+	if st.White == 1 {
+		return BestMoveWhite(st, depth)
+	} else {
+		return BestMoveBlack(st, depth)
+	}
 }
 
-func MiniMaxWhite(st *State, alpha float64, beta float64, depth int) float64 {
+func BestMoveWhite (st *state.State, depth int) *state.Move {
+	var alpha float64 = -5001
+	var best *state.Move
+	var res float64 = -5001
+	var curr float64
+	var ns *state.State
+	moves := st.GetAllMoves()
+	for _, m := range moves {
+		ns = st.StateFromMove(m)
+		curr = MiniMaxBlack(ns, alpha, 5001, depth-1)
+		if curr > res {
+			res = curr
+			best = m
+			alpha = res
+		}
+	}
+	return best
+
+}
+func BestMoveBlack (st *state.State, depth int) *state.Move {
+	var beta float64 = 5001
+	var best *state.Move
+	var res float64 = 5001
+	var curr float64
+	var ns *state.State
+	moves := st.GetAllMoves()
+	for _, m := range moves {
+		ns = st.StateFromMove(m)
+		curr = MiniMaxWhite(ns, -5001, beta, depth-1)
+		if curr < res {
+			res = curr
+			best = m
+			beta = res
+		}
+	}
+	return best
+}
+
+func MiniMaxWhite(st *state.State, alpha float64, beta float64, depth int) float64 {
 	if depth == 0{
-		return eval(st)
+		return Eval(st)
 	}
 	var res float64 = -5001
-	var curr *State
+	var curr float64
+	var ns *state.State
+	moves := st.GetAllMoves()
+	if len(moves) == 0 {
+		return 0
+	}
+	for _, m := range moves {
+		ns = st.StateFromMove(m)
+		curr = MiniMaxBlack(ns, alpha, beta, depth-1)
+		res = Max2(res, curr)
+		alpha = Max2(alpha, res)
+		if alpha >= beta {
+			return res
+		}
+	}
+	return res
+	
+}
+
+func MiniMaxBlack(st *state.State, alpha float64, beta float64, depth int) float64 {
+	if depth == 0{
+		return Eval(st)
+	}
+	var res float64 = 5001
+	var curr float64
+	var ns *state.State
+	moves := st.GetAllMoves()
+	if len(moves) == 0 {
+		return 0
+	}
+	for _, m := range moves {
+		ns = st.StateFromMove(m)
+		curr = MiniMaxWhite(ns, alpha, beta, depth-1)
+		res = Min2(res, curr)
+		beta = Min2(beta, res)
+		if beta <= alpha {
+			return res
+		}
+	}
+	return res
+	
+}
+/* func MiniMaxWhite(st *state.State, alpha float64, beta float64, depth int) float64 {
+	if depth == 0{
+		return Eval(st)
+	}
+	var res float64 = -5001
+	var curr *state.State
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	//King
 	kings := pieces.GetPositionsFromBoard(st.WK)
 	for _, k := range kings {
-		moves := pieces.KingMoves(k, white, black)
+		moves := pieces.KingMoves(k, white)
 		for _, m := range moves {
-			curr := st.StateFromMoveWhite(0, kings, k, m)
+			mv := move.NewMove(0, st.WK, k, m)
+			curr := st.StateFromMoveWhite(mv)
 			res = Max2(res, MiniMaxBlack(curr, alpha, beta, depth-1))
 			alpha = Max2(alpha, res)
 			if alpha >= beta {
@@ -187,87 +280,85 @@ func MiniMaxBlack(st *State, depth int) {
 		}
 	}
 	return res
-}
+}*/
 
 
-func Eval(st *State) float64 {
+func Eval(st *state.State) float64 {
 	if st.WK == 0 {
 		return -5000
 	}
 	if st.BK == 0 {
 		return 5000
 	}
+
 	var quotient float64 = 7.5
 	var res float64
 	black := st.AllBlackPieces()
 	white := st.AllWhitePieces()
 	wqs := pieces.GetPositionsFromBoard(st.WQ)
 	
-	res += len(wqs)*9
+	res += float64(len(wqs)*9)
 	for _, q := range wqs {
-		res += len(pieces.QueenMoves(q, white, black))/quotient
+		res += float64(len(pieces.QueenMoves(q, white, black)))/quotient
 	}
 	bqs := pieces.GetPositionsFromBoard(st.BQ)
-	res -= len(bqs)*9
+	res -= float64(len(bqs)*9)
 	for _, q := range bqs {
-		res -= len(pieces.QueenMoves(q, black, white))/quotient
+		res -= float64(len(pieces.QueenMoves(q, black, white)))/quotient
 	}
 	wrs := pieces.GetPositionsFromBoard(st.WR)
-	res += len(wrs)*5
+	res += float64(len(wrs)*5)
 	for _, r := range wrs {
-		res += len(pieces.RookMoves(r, white, black))/quotient
+		res += float64(len(pieces.RookMoves(r, white, black)))/quotient
 	}
 	brs := pieces.GetPositionsFromBoard(st.BR)
-	res -= len(brs)*5
+	res -= float64(len(brs)*5)
 	for _, r := range brs {
-		res -= len(pieces.RookMoves(r, black, white))/quotient
+		res -= float64(len(pieces.RookMoves(r, black, white)))/quotient
 	}
 	wbs := pieces.GetPositionsFromBoard(st.WB)
-	res += len(wbs)*3.1
+	res += float64(len(wbs))*float64(3.1)
 	for _, b := range wbs {
-		res += len(pieces.BishopMoves(b, white, black))/quotient
+		res += float64(len(pieces.BishopMoves(b, white, black)))/quotient
 	}
 	bbs := pieces.GetPositionsFromBoard(st.BB)
-	res -= len(bbs)*3.1
+	res -= float64(len(bbs))*float64(3.1)
 	for _, b := range bbs {
-		res -= len(pieces.BishopMoves(b, black, white))/quotient
+		res -= float64(len(pieces.BishopMoves(b, black, white)))/quotient
 	}
 	wns := pieces.GetPositionsFromBoard(st.WN)
-	res += len(wns)*3
+	res += float64(len(wns))*float64(3)
 	for _, n := range wns {
-		res += len(pieces.KnightMoves(n, white, black))/quotient
+		res += float64(len(pieces.KnightMoves(n, white)))/quotient
 	}
 	bns := pieces.GetPositionsFromBoard(st.BN)
-	res -= len(bns)*3
+	res -= float64(len(bns))*float64(3)
 	for _, n := range bns {
-		res -= len(pieces.KnightMoves(n, black, white))/quotient
+		res -= float64(len(pieces.KnightMoves(n, black)))/quotient
 	}
 	wps := pieces.GetPositionsFromBoard(st.WP)
-	res += len(wps)
+	res += float64(len(wps))
 	for _, p := range wps {
-		res += len(pieces.PawnMoves(p, white, black))/quotient
+		res += float64(len(pieces.PawnMoves(p, white, black, 1)))/quotient
 	}
 	bps := pieces.GetPositionsFromBoard(st.BP)
-	res -= len(bps)
+	res -= float64(len(bps))
 	for _, p := range bps {
-		res -= len(pieces.PawnMoves(p, black, white))/quotient
+		res -= float64(len(pieces.PawnMoves(p, black, white, 0)))/quotient
 	}
 	return res
 
 }
 
-func RandomMove(st *State) *Move {
-	var moves []*Move
-	if st.White == 1 {
-		moves = GetAllMovesWhite(st)
-	} else {
-		moves = GetAllMovesBlack(st)
-	}
-	
+func RandomMove(st *state.State) *state.Move {
+	moves := st.GetAllMoves()
+	rand.Seed(time.Now().UnixNano())
+	idx := rand.Intn(len(moves))
+	return moves[idx]
 
 }
 
-func GetAllMovesWhite(st *State) []*Move {
+/* func GetAllMovesWhite(st *State) []*Move {
 	res := []*Move{}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
@@ -377,7 +468,7 @@ func GetAllMovesBlack(st *State) []*Move {
 	}
 
 	return res
-}
+} */
 
 func Max2(f1 float64, f2 float64) float64 {
 	if f2 > f1 {

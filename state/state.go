@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"github.com/jinzhu/copier"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
 )
 
 var (
@@ -38,30 +39,7 @@ type Move struct {
 	Piece uint64
 	Start uint64
 	End uint64
-}
-
-func NewMove(name uint8, piece uint64, start uint64, end uint64) *Move {
-	return &Move{name, piece, start, end}
-}
-type Game struct {
-	WhitePieces map[string]State
-	BlackPieces map[string]State	
-	Board [8][8]uint8
-	WKmoved bool
-	BKmoved bool
-	WLRmoved bool
-	WRRMoved bool
-	BLRmoved bool
-	BRRmoved bool
-}
-func (st *State) BestMove(depth int) {
-
-}
-
-func (st *State) MiniMax(depth int) {
-	if depth == 0 {
-
-	}
+	Castle uint8
 }
 
 func NewBoard() *State {
@@ -80,6 +58,10 @@ func NewBoard() *State {
 	var BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
 	var No uint8 = 0
 	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, No, No, No, No, No, No}
+}
+
+func NewMove(name uint8, piece uint64, start uint64, end uint64) *Move {
+	return &Move{name, piece, start, end}
 }
 
 func (st *State) GenMovesKnight() {
@@ -107,62 +89,205 @@ func (st *State) AllBlackPieces() uint64 {
 	return st.BK|st.BQ|st.BR|st.BB|st.BN|st.BP
 }
 
-func (st *State) StateFromMoveWhite(name uint8, piece uint64, start uint64, end uint64) *State {
-	np := piece&(^start)
-	np |= end
-	ns := &State{}
-
-	copier.Copy(ns, st)
-	if name == 0 {
-		ns.WK = np
-	} else if name == 1 {
-		ns.WQ = np
-	} else if name == 2 {
-		ns.WR = np
-	} else if name == 3 {
-		ns.WB = np
-	} else if name == 4 {
-		ns.WN = np
+func (st *State) StateFromMove(mv *Move) *State {
+	if st.White == 1 {
+		return st.StateFromMoveWhite(mv)
 	} else {
-		ns.WP = np
+		return st.StateFromMoveBlack(mv)
 	}
-	ns.BK &= ^end
-	ns.BQ &= ^end
-	ns.BR &= ^end
-	ns.BB &= ^end
-	ns.BN &= ^end
-	ns.BP &= ^end
-	return ns
 }
 
-
-func (st *State) StateFromMoveBlack(name uint8, piece uint64, start uint64, end uint64) *State {
-	np := piece&(^start)
-	np |= end
+func (st *State) StateFromMoveWhite(mv *Move) *State {
+	np := mv.Piece&(^mv.Start)
+	np |= mv.End
 	ns := &State{}
 
 	copier.Copy(ns, st)
 	ns.White ^= 1
-	if name == 0 {
+	if mv.Name == 0 {
+		ns.WK = np
+		ns.WKmoved = 1
+	} else if mv.Name == 1 {
+		ns.WQ = np
+	} else if mv.Name == 2 {
+		ns.WR = np
+		if mv.Start == 1 {
+			ns.WLRmoved = 1
+		}
+		if mv.Start == 1<<7 {
+			ns.WRRmoved = 1
+		}
+	} else if mv.Name == 3 {
+		ns.WB = np
+	} else if mv.Name == 4 {
+		ns.WN = np
+	} else {
+		ns.WP = np
+	}
+	ns.BK &= ^mv.End
+	ns.BQ &= ^mv.End
+	ns.BR &= ^mv.End
+	ns.BB &= ^mv.End
+	ns.BN &= ^mv.End
+	ns.BP &= ^mv.End
+	return ns
+}
+
+
+func (st *State) StateFromMoveBlack(mv *Move) *State {
+	np := mv.Piece&(^mv.Start)
+	np |= mv.End
+	ns := &State{}
+
+	copier.Copy(ns, st)
+	ns.White ^= 1
+	if mv.Name == 0 {
 		ns.BK = np
-	} else if name == 1 {
+		ns.BKmoved = 1
+	} else if mv.Name == 1 {
 		ns.BQ = np
-	} else if name == 2 {
+	} else if mv.Name == 2 {
 		ns.BR = np
-	} else if name == 3 {
+		if mv.Start == 1<<56 {
+			ns.BLRmoved = 1
+		}
+		if mv.Start == 1<<63 {
+			ns.BRRmoved = 1
+		}
+	} else if mv.Name == 3 {
 		ns.BB = np
-	} else if name == 4 {
+	} else if mv.Name == 4 {
 		ns.BN = np
 	} else {
 		ns.BP = np
 	}
-	ns.WK &= ^end
-	ns.WQ &= ^end
-	ns.WR &= ^end
-	ns.WB &= ^end
-	ns.WN &= ^end
-	ns.WP &= ^end
+	ns.WK &= ^mv.End
+	ns.WQ &= ^mv.End
+	ns.WR &= ^mv.End
+	ns.WB &= ^mv.End
+	ns.WN &= ^mv.End
+	ns.WP &= ^mv.End
 	return ns
+}
+
+func (st *State) GetAllMoves() []*Move {
+	if st.White == 1 {
+		return st.GetAllMovesWhite()
+	} else {
+		return st.GetAllMovesBlack()
+	}
+}
+
+func (st *State) GetAllMovesWhite() []*Move {
+	res := []*Move{}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	//King
+	kings := pieces.GetPositionsFromBoard(st.WK)
+	for _, k := range kings {
+		moves := pieces.KingMoves(k, white)
+		for _, m := range moves {
+			res = append(res, NewMove(0, st.WK, k, m))
+			}
+		}
+	//Queens
+	queens := pieces.GetPositionsFromBoard(st.WQ)
+	for _, q := range queens {
+		moves := pieces.QueenMoves(q, white, black)
+		for _, m := range moves {
+			res = append(res, NewMove(1, st.WQ, q, m))
+		}
+	}
+	//Rooks
+	rooks := pieces.GetPositionsFromBoard(st.WR)
+	for _, r := range rooks {
+		moves := pieces.RookMoves(r, white, black)
+		for _, m := range moves {
+			res = append(res, NewMove(2, st.WR, r, m))
+		}
+	}
+	//Bishops
+	bishops := pieces.GetPositionsFromBoard(st.WB)
+	for _, b := range bishops {
+		moves := pieces.BishopMoves(b, white, black)
+		for _, m := range moves {
+			res = append(res, NewMove(3, st.WB, b, m))
+		}
+	}
+	//Knights
+	knights := pieces.GetPositionsFromBoard(st.WN)
+	for _, n := range knights {
+		moves := pieces.KnightMoves(n, white)
+		for _, m := range moves {
+			res = append(res, NewMove(4, st.WN, n, m))
+		}
+	}
+	//Pawns
+	pawns := pieces.GetPositionsFromBoard(st.WP)
+	for _, p := range pawns {
+		moves := pieces.PawnMoves(p, white, black, 1)
+		for _, m := range moves {
+			res = append(res, NewMove(5, st.WP, p, m))
+		}
+	}
+
+	return res
+}
+
+func (st *State) GetAllMovesBlack() []*Move {
+	res := []*Move{}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	//King
+	kings := pieces.GetPositionsFromBoard(st.BK)
+	for _, k := range kings {
+		moves := pieces.KingMoves(k, black)
+		for _, m := range moves {
+			res = append(res, NewMove(0, st.BK, k, m))
+			}
+		}
+	//Queens
+	queens := pieces.GetPositionsFromBoard(st.BQ)
+	for _, q := range queens {
+		moves := pieces.QueenMoves(q, black, white)
+		for _, m := range moves {
+			res = append(res, NewMove(1, st.BQ, q, m))
+		}
+	}
+	//Rooks
+	rooks := pieces.GetPositionsFromBoard(st.BR)
+	for _, r := range rooks {
+		moves := pieces.RookMoves(r, black, white)
+		for _, m := range moves {
+			res = append(res, NewMove(2, st.BR, r, m))
+		}
+	}
+	//Bishops
+	bishops := pieces.GetPositionsFromBoard(st.BB)
+	for _, b := range bishops {
+		moves := pieces.BishopMoves(b, black, white)
+		for _, m := range moves {
+			res = append(res, NewMove(3, st.BB, b, m))
+		}
+	}
+	//Knights
+	knights := pieces.GetPositionsFromBoard(st.BN)
+	for _, n := range knights {
+		moves := pieces.KnightMoves(n, black)
+		for _, m := range moves {
+			res = append(res, NewMove(4, st.BN, n, m))
+		}
+	}
+	//Pawns
+	pawns := pieces.GetPositionsFromBoard(st.BP)
+	for _, p := range pawns {
+		moves := pieces.PawnMoves(p, black, white, 0)
+		for _, m := range moves {
+			res = append(res, NewMove(5, st.BP, p, m))
+		}
+	}
+
+	return res
 }
 
 
@@ -177,6 +302,62 @@ func GetPositionsFromBoard(piece uint64) []uint64 {
 		piece = np
 	}
 	return res
+}
+
+func (st *State) CanCastleKingWhite bool {
+	if st.WKmoved == 1 || !st.WLRmoved == 1 {
+		return false
+	}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	both := white|black
+	need := 1<<1|1<<2
+	if need&both != 0 || 1&black != 0 {
+		return false
+	}
+	return true
+}
+
+func (st *State) CanCastleQueenWhite bool {
+	if st.WKmoved == 1 || !st.WRRmoved == 1 {
+		return false
+	}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	both := white|black
+	need := 1<<4|1<<5|1<<6
+	if need&both != 0 || 1<<7&black != 0 {
+		return false
+	}
+	return true
+}
+
+func (st *State) CanCastleKingBlack bool {
+	if st.BKmoved == 1 || !st.BLRmoved == 1 {
+		return false
+	}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	both := white|black
+	need := 1<<57|1<<58
+	if need&both != 0 || 1<<56&white != 0 {
+		return false
+	}
+	return true
+}
+
+func (st *State) CanCastleQueenBlack bool {
+	if st.BKmoved == 1 || !st.BRRmoved == 1 {
+		return false
+	}
+	white := st.AllWhitePieces()
+	black := st.AllBlackPieces()
+	both := white|black
+	need := 1<<60|1<<61|1<<62
+	if need&both != 0 || 1<<63&white != 0 {
+		return false
+	}
+	return true
 }
 
 func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) {

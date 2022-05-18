@@ -2,6 +2,7 @@ package pieces
 
 import (
 	"math"
+	//"fmt"
 )
 
 
@@ -9,7 +10,7 @@ var (
 	posTable = PosTable()
 )
 
-func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) {
+func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) []uint64 {
 	res := []uint64{}
 	row, col := GetRowCol(bin)
 	both := same|opp
@@ -62,6 +63,7 @@ func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) {
 			}
 		}
 	}
+	return res
 
 
 
@@ -115,7 +117,8 @@ func QueenMoves(bin uint64, same uint64, opp uint64) []uint64 {
 func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	res := []uint64{}
 	row, col := GetRowCol(bin)
-	var curr, nr, nc uint64
+	var curr uint64
+	var nr, nc int
 	nr = row+1
 	for nr < 8 {
 		curr = GetBinPos(nr, col)
@@ -174,7 +177,8 @@ func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
 func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	res := []uint64{}
 	row, col := GetRowCol(bin)
-	var curr, nr, nc uint64
+	var curr uint64
+	var nr, nc int
 	nr = row+1
 	nc = col+1
 	for nr < 8 && nc < 8 {
@@ -242,7 +246,8 @@ func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 func KnightMoves(bin uint64, team uint64) []uint64 {
 	res := []uint64{}
 	row, col := GetRowCol(bin)
-	var curr, nr, nc uint64
+	var curr uint64
+	var nr, nc int
 	nr = row+2
 	if nr < 8 {
 		if col-1 >= 0 {
@@ -306,14 +311,16 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 	return res
 }
 
-func GetRowCol(bin uint64) (uint64, uint64) {
+func 
+
+func GetRowCol(bin uint64) (int, int) {
 	pos := posTable[bin]
-	row := pos/8
-	col := pos%8
+	row := int(pos/8)
+	col := int(pos%8)
 	return row, col
 }
 
-func GetBinPos(row uint64, col uint64) uint64 {
+func GetBinPos(row int, col int) uint64 {
 	return uint64(math.Pow(2, float64(8*row+col)))
 }
 
