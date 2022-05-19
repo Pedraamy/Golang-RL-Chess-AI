@@ -28,11 +28,12 @@ func main() {
 	var bm *state.Move
 	for math.Abs(algo.Eval(board)) < 5000 {
 		if i%2 == 0 {
-			bm = algo.BestMove(board, 5)
+			bm = algo.BestMove(board, 4)
 		} else {
 			bm = algo.RandomMove(board)
 		}
-		fmt.Println(Translate(bm.Name, bm.End))
+		fmt.Println(Translate(bm.Name, bm.End, bm.Castle))
+		fmt.Println(algo.Eval(board))
 		board = board.StateFromMove(bm)
 		i++
 	}
@@ -42,7 +43,13 @@ func main() {
 	
 }
 
-func Translate(name uint8, end uint64) string {
+func Translate(name uint8, end uint64, castle uint8) string {
+	if castle == 1 {
+		return "O-O"
+	}
+	if castle == 2 {
+		return "O-O-O"
+	}
 	var res string
 	if name == 0 {
 		res += "K"

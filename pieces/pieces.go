@@ -311,7 +311,6 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 	return res
 }
 
-func 
 
 func GetRowCol(bin uint64) (int, int) {
 	pos := posTable[bin]

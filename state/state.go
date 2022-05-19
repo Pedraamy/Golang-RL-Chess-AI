@@ -32,6 +32,7 @@ type State struct {
 	WRRmoved uint8
 	BLRmoved uint8
 	BRRmoved uint8
+	JustCastled uint8
 }
 
 type Move struct {
@@ -57,11 +58,11 @@ func NewBoard() *State {
 	var BN uint64 = 1<<57 | 1<<62
 	var BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
 	var No uint8 = 0
-	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, No, No, No, No, No, No}
+	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, No, No, No, No, No, No, No}
 }
 
-func NewMove(name uint8, piece uint64, start uint64, end uint64) *Move {
-	return &Move{name, piece, start, end}
+func NewMove(name uint8, piece uint64, start uint64, end uint64, castle uint8) *Move {
+	return &Move{name, piece, start, end, castle}
 }
 
 func (st *State) GenMovesKnight() {
@@ -98,38 +99,52 @@ func (st *State) StateFromMove(mv *Move) *State {
 }
 
 func (st *State) StateFromMoveWhite(mv *Move) *State {
-	np := mv.Piece&(^mv.Start)
-	np |= mv.End
 	ns := &State{}
-
 	copier.Copy(ns, st)
 	ns.White ^= 1
-	if mv.Name == 0 {
-		ns.WK = np
+	if mv.Castle != 0 {
+		if mv.Castle == 1 {
+			ns.WK = 1<<1
+			ns.WR &= ^uint64(1)
+			ns.WR |= 1<<2
+		} else {
+			ns.WK = 1<<5
+			ns.WR &= ^uint64(1<<7)
+			ns.WR |= 1<<4
+		}
+		ns.JustCastled = 1
 		ns.WKmoved = 1
-	} else if mv.Name == 1 {
-		ns.WQ = np
-	} else if mv.Name == 2 {
-		ns.WR = np
-		if mv.Start == 1 {
-			ns.WLRmoved = 1
-		}
-		if mv.Start == 1<<7 {
-			ns.WRRmoved = 1
-		}
-	} else if mv.Name == 3 {
-		ns.WB = np
-	} else if mv.Name == 4 {
-		ns.WN = np
 	} else {
-		ns.WP = np
+		np := mv.Piece&(^mv.Start)
+		np |= mv.End
+		ns.JustCastled = 0
+		if mv.Name == 0 {
+			ns.WK = np
+			ns.WKmoved = 1
+		} else if mv.Name == 1 {
+			ns.WQ = np
+		} else if mv.Name == 2 {
+			ns.WR = np
+			if mv.Start == 1 {
+				ns.WLRmoved = 1
+			}
+			if mv.Start == 1<<7 {
+				ns.WRRmoved = 1
+			}
+		} else if mv.Name == 3 {
+			ns.WB = np
+		} else if mv.Name == 4 {
+			ns.WN = np
+		} else {
+			ns.WP = np
+		}
+		ns.BK &= ^mv.End
+		ns.BQ &= ^mv.End
+		ns.BR &= ^mv.End
+		ns.BB &= ^mv.End
+		ns.BN &= ^mv.End
+		ns.BP &= ^mv.End
 	}
-	ns.BK &= ^mv.End
-	ns.BQ &= ^mv.End
-	ns.BR &= ^mv.End
-	ns.BB &= ^mv.End
-	ns.BN &= ^mv.End
-	ns.BP &= ^mv.End
 	return ns
 }
 
@@ -141,32 +156,47 @@ func (st *State) StateFromMoveBlack(mv *Move) *State {
 
 	copier.Copy(ns, st)
 	ns.White ^= 1
-	if mv.Name == 0 {
-		ns.BK = np
+
+	if mv.Castle != 0 {
+		if mv.Castle == 1 {
+			ns.BK = 1<<57
+			ns.BR &= ^uint64(1<<56)
+			ns.BR |= 1<<58
+		} else {
+			ns.BK = 1<<61
+			ns.WR &= ^uint64(1<<63)
+			ns.WR |= 1<<60
+		}
+		ns.JustCastled = 1
 		ns.BKmoved = 1
-	} else if mv.Name == 1 {
-		ns.BQ = np
-	} else if mv.Name == 2 {
-		ns.BR = np
-		if mv.Start == 1<<56 {
-			ns.BLRmoved = 1
-		}
-		if mv.Start == 1<<63 {
-			ns.BRRmoved = 1
-		}
-	} else if mv.Name == 3 {
-		ns.BB = np
-	} else if mv.Name == 4 {
-		ns.BN = np
 	} else {
-		ns.BP = np
+		if mv.Name == 0 {
+			ns.BK = np
+			ns.BKmoved = 1
+		} else if mv.Name == 1 {
+			ns.BQ = np
+		} else if mv.Name == 2 {
+			ns.BR = np
+			if mv.Start == 1<<56 {
+				ns.BLRmoved = 1
+			}
+			if mv.Start == 1<<63 {
+				ns.BRRmoved = 1
+			}
+		} else if mv.Name == 3 {
+			ns.BB = np
+		} else if mv.Name == 4 {
+			ns.BN = np
+		} else {
+			ns.BP = np
+		}
+		ns.WK &= ^mv.End
+		ns.WQ &= ^mv.End
+		ns.WR &= ^mv.End
+		ns.WB &= ^mv.End
+		ns.WN &= ^mv.End
+		ns.WP &= ^mv.End
 	}
-	ns.WK &= ^mv.End
-	ns.WQ &= ^mv.End
-	ns.WR &= ^mv.End
-	ns.WB &= ^mv.End
-	ns.WN &= ^mv.End
-	ns.WP &= ^mv.End
 	return ns
 }
 
@@ -182,12 +212,20 @@ func (st *State) GetAllMovesWhite() []*Move {
 	res := []*Move{}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
+
+	//Castles
+	if st.CanCastleKingWhite() {
+		res = append(res, NewMove(0, 0, 0, 0, 1))
+	}
+	if st.CanCastleQueenWhite() {
+		res = append(res, NewMove(0, 0, 0, 0, 2))
+	}
 	//King
 	kings := pieces.GetPositionsFromBoard(st.WK)
 	for _, k := range kings {
 		moves := pieces.KingMoves(k, white)
 		for _, m := range moves {
-			res = append(res, NewMove(0, st.WK, k, m))
+			res = append(res, NewMove(0, st.WK, k, m, 0))
 			}
 		}
 	//Queens
@@ -195,7 +233,7 @@ func (st *State) GetAllMovesWhite() []*Move {
 	for _, q := range queens {
 		moves := pieces.QueenMoves(q, white, black)
 		for _, m := range moves {
-			res = append(res, NewMove(1, st.WQ, q, m))
+			res = append(res, NewMove(1, st.WQ, q, m, 0))
 		}
 	}
 	//Rooks
@@ -203,7 +241,7 @@ func (st *State) GetAllMovesWhite() []*Move {
 	for _, r := range rooks {
 		moves := pieces.RookMoves(r, white, black)
 		for _, m := range moves {
-			res = append(res, NewMove(2, st.WR, r, m))
+			res = append(res, NewMove(2, st.WR, r, m, 0))
 		}
 	}
 	//Bishops
@@ -211,7 +249,7 @@ func (st *State) GetAllMovesWhite() []*Move {
 	for _, b := range bishops {
 		moves := pieces.BishopMoves(b, white, black)
 		for _, m := range moves {
-			res = append(res, NewMove(3, st.WB, b, m))
+			res = append(res, NewMove(3, st.WB, b, m, 0))
 		}
 	}
 	//Knights
@@ -219,7 +257,7 @@ func (st *State) GetAllMovesWhite() []*Move {
 	for _, n := range knights {
 		moves := pieces.KnightMoves(n, white)
 		for _, m := range moves {
-			res = append(res, NewMove(4, st.WN, n, m))
+			res = append(res, NewMove(4, st.WN, n, m, 0))
 		}
 	}
 	//Pawns
@@ -227,7 +265,7 @@ func (st *State) GetAllMovesWhite() []*Move {
 	for _, p := range pawns {
 		moves := pieces.PawnMoves(p, white, black, 1)
 		for _, m := range moves {
-			res = append(res, NewMove(5, st.WP, p, m))
+			res = append(res, NewMove(5, st.WP, p, m, 0))
 		}
 	}
 
@@ -238,12 +276,19 @@ func (st *State) GetAllMovesBlack() []*Move {
 	res := []*Move{}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
+	//Castles
+	if st.CanCastleKingBlack() {
+		res = append(res, NewMove(0, 0, 0, 0, 1))
+	}
+	if st.CanCastleQueenBlack() {
+		res = append(res, NewMove(0, 0, 0, 0, 2))
+	}
 	//King
 	kings := pieces.GetPositionsFromBoard(st.BK)
 	for _, k := range kings {
 		moves := pieces.KingMoves(k, black)
 		for _, m := range moves {
-			res = append(res, NewMove(0, st.BK, k, m))
+			res = append(res, NewMove(0, st.BK, k, m, 0))
 			}
 		}
 	//Queens
@@ -251,7 +296,7 @@ func (st *State) GetAllMovesBlack() []*Move {
 	for _, q := range queens {
 		moves := pieces.QueenMoves(q, black, white)
 		for _, m := range moves {
-			res = append(res, NewMove(1, st.BQ, q, m))
+			res = append(res, NewMove(1, st.BQ, q, m, 0))
 		}
 	}
 	//Rooks
@@ -259,7 +304,7 @@ func (st *State) GetAllMovesBlack() []*Move {
 	for _, r := range rooks {
 		moves := pieces.RookMoves(r, black, white)
 		for _, m := range moves {
-			res = append(res, NewMove(2, st.BR, r, m))
+			res = append(res, NewMove(2, st.BR, r, m, 0))
 		}
 	}
 	//Bishops
@@ -267,7 +312,7 @@ func (st *State) GetAllMovesBlack() []*Move {
 	for _, b := range bishops {
 		moves := pieces.BishopMoves(b, black, white)
 		for _, m := range moves {
-			res = append(res, NewMove(3, st.BB, b, m))
+			res = append(res, NewMove(3, st.BB, b, m, 0))
 		}
 	}
 	//Knights
@@ -275,7 +320,7 @@ func (st *State) GetAllMovesBlack() []*Move {
 	for _, n := range knights {
 		moves := pieces.KnightMoves(n, black)
 		for _, m := range moves {
-			res = append(res, NewMove(4, st.BN, n, m))
+			res = append(res, NewMove(4, st.BN, n, m, 0))
 		}
 	}
 	//Pawns
@@ -283,7 +328,7 @@ func (st *State) GetAllMovesBlack() []*Move {
 	for _, p := range pawns {
 		moves := pieces.PawnMoves(p, black, white, 0)
 		for _, m := range moves {
-			res = append(res, NewMove(5, st.BP, p, m))
+			res = append(res, NewMove(5, st.BP, p, m, 0))
 		}
 	}
 
@@ -304,56 +349,56 @@ func GetPositionsFromBoard(piece uint64) []uint64 {
 	return res
 }
 
-func (st *State) CanCastleKingWhite bool {
-	if st.WKmoved == 1 || !st.WLRmoved == 1 {
+func (st *State) CanCastleKingWhite() bool {
+	if st.WKmoved == 1 || st.WLRmoved == 1 {
 		return false
 	}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	both := white|black
-	need := 1<<1|1<<2
+	var need uint64 = 1<<1|1<<2
 	if need&both != 0 || 1&black != 0 {
 		return false
 	}
 	return true
 }
 
-func (st *State) CanCastleQueenWhite bool {
-	if st.WKmoved == 1 || !st.WRRmoved == 1 {
+func (st *State) CanCastleQueenWhite() bool {
+	if st.WKmoved == 1 || st.WRRmoved == 1 {
 		return false
 	}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	both := white|black
-	need := 1<<4|1<<5|1<<6
+	var need uint64 = 1<<4|1<<5|1<<6
 	if need&both != 0 || 1<<7&black != 0 {
 		return false
 	}
 	return true
 }
 
-func (st *State) CanCastleKingBlack bool {
-	if st.BKmoved == 1 || !st.BLRmoved == 1 {
+func (st *State) CanCastleKingBlack() bool {
+	if st.BKmoved == 1 || st.BLRmoved == 1 {
 		return false
 	}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	both := white|black
-	need := 1<<57|1<<58
+	var need uint64 = 1<<57|1<<58
 	if need&both != 0 || 1<<56&white != 0 {
 		return false
 	}
 	return true
 }
 
-func (st *State) CanCastleQueenBlack bool {
-	if st.BKmoved == 1 || !st.BRRmoved == 1 {
+func (st *State) CanCastleQueenBlack() bool {
+	if st.BKmoved == 1 || st.BRRmoved == 1 {
 		return false
 	}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	both := white|black
-	need := 1<<60|1<<61|1<<62
+	var need uint64 = 1<<60|1<<61|1<<62
 	if need&both != 0 || 1<<63&white != 0 {
 		return false
 	}
