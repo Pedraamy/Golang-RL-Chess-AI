@@ -1,4 +1,4 @@
-package psqt
+package values
 
 var (
 	Pawn int = 100

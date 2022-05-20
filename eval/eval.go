@@ -16,5 +16,5 @@ func Eval(st *state.State) int {
 func PieceValues(st *state.State) int {
 	res := 0
 	wpawns := pieces.GetPositionsFromBoard(st.WP)
-	res += values.
+	res += values.Pawn * len(wpawns)
 }
