@@ -7,7 +7,7 @@ import (
 
 
 var (
-	posTable = PosTable()
+	PosTable = posTable()
 )
 
 func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) []uint64 {
@@ -313,7 +313,7 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 
 
 func GetRowCol(bin uint64) (int, int) {
-	pos := posTable[bin]
+	pos := PosTable[bin]
 	row := int(pos/8)
 	col := int(pos%8)
 	return row, col
@@ -337,7 +337,7 @@ func GetPositionsFromBoard(piece uint64) []uint64 {
 
 
 
-func PosTable() map[uint64]uint64 {
+func posTable() map[uint64]uint64 {
 	table := make(map[uint64]uint64)
 	var curr uint64
 	for i := 0; i<64; i++ {
