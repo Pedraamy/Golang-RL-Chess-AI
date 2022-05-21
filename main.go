@@ -4,133 +4,198 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
 	"fmt"
 	"strconv"
-	"math"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
-	"os"
+
 
 )
 
 
 func main() {
-	PosTable := pieces.PosTable()
+
 	
 
-	board := state.NewBoard()
+	/* board := state.NewBoard()
 	white := board.AllWhitePieces()
 	black := board.AllBlackPieces()
 	pieces.PawnMoves(1<<12, white, black, 1)
 	i := 0
 	var bm *state.Move
-	for math.Abs(algo.Eval(board)) < 5000 {
+	for math.Abs(float64(eval.Eval(board))) < 100000 {
+		if board.WK == 0 {
+			fmt.Println("Black wins")
+			break
+		}
+		if board.BK == 0 {
+			fmt.Println("White wins")
+			break
+		}
 		if i%2 == 0 {
-			bm = algo.BestMove(board, 4)
+			bm = algo.BestMove(board, 6)
 		} else {
 			bm = algo.RandomMove(board)
 		}
-		fmt.Println(Translate(bm.Name, bm.End, bm.Castle))
-		fmt.Println(algo.Eval(board))
+		fmt.Println(Translate(bm.Start, bm.End, bm.Castle))
+		fmt.Println(eval.Eval(board))
 		board = board.StateFromMove(bm)
-		i++
-	}
-	mv := algo.BestMove(board, 4)
-	fmt.Println(mv.Name)
-	fmt.Println(PosTable[mv.Start], PosTable[mv.End])
-	
+		i++ */
+	PlayComp()
+
 }
 
-func Translate(name uint8, end uint64, castle uint8) string {
+func Translate(start uint64, end uint64, castle uint8) string {
 	if castle == 1 {
 		return "O-O"
 	}
 	if castle == 2 {
 		return "O-O-O"
 	}
-	var res string
-	if name == 0 {
-		res += "K"
-	} else if name == 1 {
-		res += "Q"
-	} else if name == 2 {
-		res += "R"
-	} else if name == 3 {
-		res += "B"
-	} else if name == 4 {
-		res += "N"
-	}
+	var s, e string
 
-	row, col := pieces.GetRowCol(end)
+	row, col := pieces.GetRowCol(start)
 
 	if col == 0 {
-		res += "h"	
+		s += "h"	
 	} else if col == 1 {
-		res += "g"
+		s += "g"
 	} else if col == 2 {
-		res += "f"
+		s += "f"
 	} else if col == 3 {
-		res += "e"
+		s += "e"
 	} else if col == 4 {
-		res += "d"
+		s += "d"
 	} else if col == 5 {
-		res += "c"
+		s += "c"
 	} else if col == 6 {
-		res += "b"
+		s += "b"
 	} else if col == 7 {
-		res += "a"
+		s += "a"
 	}
 
-	res += strconv.Itoa(row+1)
+	s += strconv.Itoa(row+1)
 
-	return res
+	row, col = pieces.GetRowCol(end)
+
+	if col == 0 {
+		e += "h"	
+	} else if col == 1 {
+		e += "g"
+	} else if col == 2 {
+		e += "f"
+	} else if col == 3 {
+		e += "e"
+	} else if col == 4 {
+		e += "d"
+	} else if col == 5 {
+		e += "c"
+	} else if col == 6 {
+		e += "b"
+	} else if col == 7 {
+		e += "a"
+	}
+
+	e += strconv.Itoa(row+1)
+
+	return s + "  " + e
 
 }
 
-func ChessBoard() {
-	const chessboardSquaresPerSide = 8
-	const chessboardSquares = chessboardSquaresPerSide * chessboardSquaresPerSide
+func PlayComp() {
+	board := state.NewBoard()
+	var bm *state.Move
 
-	const chessboardSquareSideSize = 120
-	const chessboardSideSize = chessboardSquaresPerSide * chessboardSquareSideSize
-
-	chessboardRect := image.Rect(0, 0, chessboardSideSize, chessboardSideSize)
-	chessboardImage := image.NewRGBA(chessboardRect)
-	uniform := &image.Uniform{}
-
-	for s := 0; s < chessboardSquares; s++ {
-		x := s / chessboardSquaresPerSide
-		y := s % chessboardSquaresPerSide
-
-		x0 := x * chessboardSquareSideSize
-		y0 := y * chessboardSquareSideSize
-		x1 := x0 + chessboardSquareSideSize
-		y1 := y0 + chessboardSquareSideSize
-
-		rect := image.Rect(x0, y0, x1, y1)
-
-		if isBlack := (x+y)%2 == 1; isBlack {
-			uniform.C = color.Black
+	for {
+		if board.WK == 0 {
+			fmt.Println("Black wins")
+			break
+		}
+		if board.BK == 0 {
+			fmt.Println("White wins")
+			break
+		}
+		if board.White == 1 {
+			bm = algo.BestMove(board, 6)
 		} else {
-			uniform.C = color.White
+			bm = InputMove(board, 0)
+		}
+		fmt.Println(Translate(bm.Start, bm.End, bm.Castle))
+		fmt.Println(eval.Eval(board))
+		board = board.StateFromMove(bm)
+	}
+	return
+}
+
+func InputMove (st *state.State, color uint8) *state.Move {
+	var castle string
+    fmt.Println("Castle?")
+	fmt.Scan(&castle)
+	for castle != "Q" && castle != "K" && castle != "no" {
+		fmt.Scanln(&castle)
+    	fmt.Println("Castle?")
+	}
+	if castle == "Q" {
+		return state.NewMove(1, 1, 1, 1, 2)
+	} else if castle == "K" {
+		return state.NewMove(1, 1, 1, 1, 1)
+	}
+	var name uint8
+	var piece, start, end uint64
+    fmt.Println("Name?")
+	fmt.Scan(&name)
+
+    fmt.Println("Start?")
+	fmt.Scan(&start)
+	start = 1<<start
+
+    fmt.Println("End?")
+	fmt.Scan(&end)
+	end = 1<<end
+
+	if name == 0 {
+		if color == 0 {
+			piece = st.BK
+		} else {
+			piece = st.WK
 		}
 
-		draw.Draw(chessboardImage, rect, uniform, image.Point{}, draw.Src)
-	}
+	} else if name == 1 {
+		if color == 0 {
+			piece = st.BQ
+		} else {
+			piece = st.WQ
+		}
 
-	chessboardFile, err := os.Create("chessboard.png")
-	if err != nil {
-		panic(err)
-	}
+	} else if name == 2 {
+		if color == 0 {
+			piece = st.BR
+		} else {
+			piece = st.WR
+		}
 
-	if err := png.Encode(chessboardFile, chessboardImage); err != nil {
-		chessboardFile.Close()
-		panic(err)
-	}
+	} else if name == 3 {
+		if color == 0 {
+			piece = st.BB
+		} else {
+			piece = st.WB
+		}
 
-	if err := chessboardFile.Close(); err != nil {
-		panic(err)
+	} else if name == 4 {
+		if color == 0 {
+			piece = st.BN
+		} else {
+			piece = st.WN
+		}
+
+	} else {
+		if color == 0 {
+			piece = st.BP
+		} else {
+			piece = st.WP
+		}
 	}
+	return state.NewMove(name, piece, start, end, 0)
+
 }
+
+

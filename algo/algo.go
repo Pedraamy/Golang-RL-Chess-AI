@@ -2,7 +2,7 @@ package algo
 
 import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
-	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
 	"math/rand"
     "time"
 )
@@ -17,15 +17,16 @@ func BestMove (st *state.State, depth int) *state.Move {
 }
 
 func BestMoveWhite (st *state.State, depth int) *state.Move {
-	var alpha float64 = -5001
+	var alpha int = -100001
 	var best *state.Move
-	var res float64 = -5001
-	var curr float64
+	var res int = -100001
+	var curr int
 	var ns *state.State
-	moves := st.GetAllMoves()
-	for _, m := range moves {
+	total, moves := st.GetAllMoves()
+	total = append(total, moves...)
+	for _, m := range total {
 		ns = st.StateFromMove(m)
-		curr = MiniMaxBlack(ns, alpha, 5001, depth-1)
+		curr = MiniMaxBlack(ns, alpha, 100001, depth-1)
 		if curr > res {
 			res = curr
 			best = m
@@ -36,15 +37,16 @@ func BestMoveWhite (st *state.State, depth int) *state.Move {
 
 }
 func BestMoveBlack (st *state.State, depth int) *state.Move {
-	var beta float64 = 5001
+	var beta int = 100001
 	var best *state.Move
-	var res float64 = 5001
-	var curr float64
+	var res int = 100001
+	var curr int
 	var ns *state.State
-	moves := st.GetAllMoves()
-	for _, m := range moves {
+	total, moves := st.GetAllMoves()
+	total = append(total, moves...)
+	for _, m := range total {
 		ns = st.StateFromMove(m)
-		curr = MiniMaxWhite(ns, -5001, beta, depth-1)
+		curr = MiniMaxWhite(ns, 100001, beta, depth-1)
 		if curr < res {
 			res = curr
 			best = m
@@ -54,18 +56,22 @@ func BestMoveBlack (st *state.State, depth int) *state.Move {
 	return best
 }
 
-func MiniMaxWhite(st *state.State, alpha float64, beta float64, depth int) float64 {
-	if depth == 0{
-		return Eval(st)
+func MiniMaxWhite(st *state.State, alpha int, beta int, depth int) int {
+	if st.WK == 0 {
+		return -100000
 	}
-	var res float64 = -5001
-	var curr float64
+	if depth == 0{
+		return eval.Eval(st)
+	}
+	var res int = -100001
+	var curr int
 	var ns *state.State
-	moves := st.GetAllMoves()
-	if len(moves) == 0 {
+	total, moves := st.GetAllMoves()
+	total = append(total, moves...)
+	if len(total) == 0 {
 		return 0
 	}
-	for _, m := range moves {
+	for _, m := range total {
 		ns = st.StateFromMove(m)
 		curr = MiniMaxBlack(ns, alpha, beta, depth-1)
 		res = Max2(res, curr)
@@ -78,18 +84,22 @@ func MiniMaxWhite(st *state.State, alpha float64, beta float64, depth int) float
 	
 }
 
-func MiniMaxBlack(st *state.State, alpha float64, beta float64, depth int) float64 {
-	if depth == 0{
-		return Eval(st)
+func MiniMaxBlack(st *state.State, alpha int, beta int, depth int) int {
+	if st.BK == 0 {
+		return 100000
 	}
-	var res float64 = 5001
-	var curr float64
+	if depth == 0{
+		return eval.Eval(st)
+	}
+	var res int = 100001
+	var curr int
 	var ns *state.State
-	moves := st.GetAllMoves()
-	if len(moves) == 0 {
+	total, moves := st.GetAllMoves()
+	total = append(total, moves...)
+	if len(total) == 0 {
 		return 0
 	}
-	for _, m := range moves {
+	for _, m := range total {
 		ns = st.StateFromMove(m)
 		curr = MiniMaxWhite(ns, alpha, beta, depth-1)
 		res = Min2(res, curr)
@@ -282,7 +292,7 @@ func MiniMaxBlack(st *State, depth int) {
 	return res
 }*/
 
-
+/* 
 func Eval(st *state.State) float64 {
 	if st.WK == 0 {
 		return -5000
@@ -348,13 +358,14 @@ func Eval(st *state.State) float64 {
 	}
 	return res
 
-}
+} */
 
 func RandomMove(st *state.State) *state.Move {
-	moves := st.GetAllMoves()
+	total, moves := st.GetAllMoves()
+	total = append(total, moves...)
 	rand.Seed(time.Now().UnixNano())
-	idx := rand.Intn(len(moves))
-	return moves[idx]
+	idx := rand.Intn(len(total))
+	return total[idx]
 
 }
 
@@ -470,7 +481,7 @@ func GetAllMovesBlack(st *State) []*Move {
 	return res
 } */
 
-func Max2(f1 float64, f2 float64) float64 {
+func Max2(f1 int, f2 int) int {
 	if f2 > f1 {
 		return f2
 	} else {
@@ -478,7 +489,7 @@ func Max2(f1 float64, f2 float64) float64 {
 	}
 }
 
-func Min2(f1 float64, f2 float64) float64 {
+func Min2(f1 int, f2 int) int {
 	if f2 < f1 {
 		return f2
 	} else {

@@ -65,22 +65,6 @@ func NewMove(name uint8, piece uint64, start uint64, end uint64, castle uint8) *
 	return &Move{name, piece, start, end, castle}
 }
 
-func (st *State) GenMovesKnight() {
-	var knights, team uint64
-	if st.White == 1 {
-		knights = st.WN
-		team = st.AllWhitePieces()
-	} else {
-		knights = st.BN
-		team = st.AllBlackPieces()
-	}
-	bins := GetPositionsFromBoard(knights)
-	moves := []uint64{}
-	for _, b := range bins {
-		moves = append(moves, KnightMoves(b, team)...)
-	}
-
-}
 
 func (st *State) AllWhitePieces() uint64 {
 	return st.WK|st.WQ|st.WR|st.WB|st.WN|st.WP
@@ -200,7 +184,7 @@ func (st *State) StateFromMoveBlack(mv *Move) *State {
 	return ns
 }
 
-func (st *State) GetAllMoves() []*Move {
+func (st *State) GetAllMoves() ([]*Move, []*Move) {
 	if st.White == 1 {
 		return st.GetAllMovesWhite()
 	} else {
@@ -208,131 +192,168 @@ func (st *State) GetAllMoves() []*Move {
 	}
 }
 
-func (st *State) GetAllMovesWhite() []*Move {
-	res := []*Move{}
+func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
+	moves := []*Move{}
+	captures := []*Move{}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 
 	//Castles
 	if st.CanCastleKingWhite() {
-		res = append(res, NewMove(0, 0, 0, 0, 1))
+		moves = append(moves, NewMove(0, 0, 0, 0, 1))
 	}
 	if st.CanCastleQueenWhite() {
-		res = append(res, NewMove(0, 0, 0, 0, 2))
+		moves = append(moves, NewMove(0, 0, 0, 0, 2))
 	}
 	//King
-	kings := pieces.GetPositionsFromBoard(st.WK)
+	kings := pieces.GetPiecesFromBoard(st.WK)
 	for _, k := range kings {
-		moves := pieces.KingMoves(k, white)
-		for _, m := range moves {
-			res = append(res, NewMove(0, st.WK, k, m, 0))
-			}
+		caps, movs := pieces.KingMoves(k, white, black)
+		for _, c := range caps {
+			captures = append(captures, NewMove(0, st.WK, k, c, 0))
 		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(0, st.WK, k, m, 0))
+		}
+	}
 	//Queens
-	queens := pieces.GetPositionsFromBoard(st.WQ)
+	queens := pieces.GetPiecesFromBoard(st.WQ)
 	for _, q := range queens {
-		moves := pieces.QueenMoves(q, white, black)
-		for _, m := range moves {
-			res = append(res, NewMove(1, st.WQ, q, m, 0))
+		caps, movs := pieces.QueenMoves(q, white, black)
+		for _, c := range caps {
+			captures = append(captures, NewMove(1, st.WQ, q, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(1, st.WQ, q, m, 0))
 		}
 	}
 	//Rooks
-	rooks := pieces.GetPositionsFromBoard(st.WR)
+	rooks := pieces.GetPiecesFromBoard(st.WR)
 	for _, r := range rooks {
-		moves := pieces.RookMoves(r, white, black)
-		for _, m := range moves {
-			res = append(res, NewMove(2, st.WR, r, m, 0))
+		caps, movs := pieces.RookMoves(r, white, black)
+		for _, c := range caps {
+			captures = append(captures, NewMove(2, st.WR, r, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(2, st.WR, r, m, 0))
 		}
 	}
 	//Bishops
-	bishops := pieces.GetPositionsFromBoard(st.WB)
+	bishops := pieces.GetPiecesFromBoard(st.WB)
 	for _, b := range bishops {
-		moves := pieces.BishopMoves(b, white, black)
-		for _, m := range moves {
-			res = append(res, NewMove(3, st.WB, b, m, 0))
+		caps, movs := pieces.BishopMoves(b, white, black)
+		for _, c := range caps {
+			captures = append(captures, NewMove(3, st.WB, b, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(3, st.WB, b, m, 0))
 		}
 	}
 	//Knights
-	knights := pieces.GetPositionsFromBoard(st.WN)
+	knights := pieces.GetPiecesFromBoard(st.WN)
 	for _, n := range knights {
-		moves := pieces.KnightMoves(n, white)
-		for _, m := range moves {
-			res = append(res, NewMove(4, st.WN, n, m, 0))
+		caps, movs := pieces.KnightMoves(n, white, black)
+		for _, c := range caps {
+			captures = append(captures, NewMove(4, st.WN, n, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(4, st.WN, n, m, 0))
 		}
 	}
 	//Pawns
-	pawns := pieces.GetPositionsFromBoard(st.WP)
+	pawns := pieces.GetPiecesFromBoard(st.WP)
 	for _, p := range pawns {
-		moves := pieces.PawnMoves(p, white, black, 1)
-		for _, m := range moves {
-			res = append(res, NewMove(5, st.WP, p, m, 0))
+		caps, movs := pieces.PawnMoves(p, white, black, 1)
+		for _, c := range caps {
+			captures = append(captures, NewMove(5, st.WP, p, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(5, st.WP, p, m, 0))
 		}
 	}
-
-	return res
+	return captures, moves
 }
 
-func (st *State) GetAllMovesBlack() []*Move {
-	res := []*Move{}
+func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
+	moves := []*Move{}
+	captures := []*Move{}
 	white := st.AllWhitePieces()
 	black := st.AllBlackPieces()
 	//Castles
 	if st.CanCastleKingBlack() {
-		res = append(res, NewMove(0, 0, 0, 0, 1))
+		moves = append(moves, NewMove(0, 0, 0, 0, 1))
 	}
 	if st.CanCastleQueenBlack() {
-		res = append(res, NewMove(0, 0, 0, 0, 2))
+		moves = append(moves, NewMove(0, 0, 0, 0, 2))
 	}
 	//King
-	kings := pieces.GetPositionsFromBoard(st.BK)
+	kings := pieces.GetPiecesFromBoard(st.BK)
 	for _, k := range kings {
-		moves := pieces.KingMoves(k, black)
-		for _, m := range moves {
-			res = append(res, NewMove(0, st.BK, k, m, 0))
-			}
+		caps, movs := pieces.KingMoves(k, black, white)
+		for _, c := range caps {
+			captures = append(captures, NewMove(0, st.BK, k, c, 0))
 		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(0, st.BK, k, m, 0))
+		}
+	}
 	//Queens
-	queens := pieces.GetPositionsFromBoard(st.BQ)
+	queens := pieces.GetPiecesFromBoard(st.BQ)
 	for _, q := range queens {
-		moves := pieces.QueenMoves(q, black, white)
-		for _, m := range moves {
-			res = append(res, NewMove(1, st.BQ, q, m, 0))
+		caps, movs := pieces.QueenMoves(q, black, white)
+		for _, c := range caps {
+			captures = append(captures, NewMove(1, st.BQ, q, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(1, st.BQ, q, m, 0))
 		}
 	}
 	//Rooks
-	rooks := pieces.GetPositionsFromBoard(st.BR)
+	rooks := pieces.GetPiecesFromBoard(st.BR)
 	for _, r := range rooks {
-		moves := pieces.RookMoves(r, black, white)
-		for _, m := range moves {
-			res = append(res, NewMove(2, st.BR, r, m, 0))
+		caps, movs := pieces.RookMoves(r, black, white)
+		for _, c := range caps {
+			captures = append(captures, NewMove(2, st.BR, r, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(2, st.BR, r, m, 0))
 		}
 	}
 	//Bishops
-	bishops := pieces.GetPositionsFromBoard(st.BB)
+	bishops := pieces.GetPiecesFromBoard(st.BB)
 	for _, b := range bishops {
-		moves := pieces.BishopMoves(b, black, white)
-		for _, m := range moves {
-			res = append(res, NewMove(3, st.BB, b, m, 0))
+		caps, movs := pieces.BishopMoves(b, black, white)
+		for _, c := range caps {
+			captures = append(captures, NewMove(3, st.BB, b, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(3, st.BB, b, m, 0))
 		}
 	}
 	//Knights
-	knights := pieces.GetPositionsFromBoard(st.BN)
+	knights := pieces.GetPiecesFromBoard(st.BN)
 	for _, n := range knights {
-		moves := pieces.KnightMoves(n, black)
-		for _, m := range moves {
-			res = append(res, NewMove(4, st.BN, n, m, 0))
+		caps, movs := pieces.KnightMoves(n, black, white)
+		for _, c := range caps {
+			captures = append(captures, NewMove(4, st.BN, n, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(4, st.BN, n, m, 0))
 		}
 	}
 	//Pawns
-	pawns := pieces.GetPositionsFromBoard(st.BP)
+	pawns := pieces.GetPiecesFromBoard(st.BP)
 	for _, p := range pawns {
-		moves := pieces.PawnMoves(p, black, white, 0)
-		for _, m := range moves {
-			res = append(res, NewMove(5, st.BP, p, m, 0))
+		caps, movs := pieces.PawnMoves(p, black, white, 0)
+		for _, c := range caps {
+			captures = append(captures, NewMove(5, st.BP, p, c, 0))
+		}
+		for _, m := range movs {
+			moves = append(moves, NewMove(5, st.BP, p, m, 0))
 		}
 	}
 
-	return res
+	return captures, moves
 }
 
 
@@ -405,8 +426,9 @@ func (st *State) CanCastleQueenBlack() bool {
 	return true
 }
 
-func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) {
-	res := []uint64{}
+func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) ([]uint64, []uint64) {
+	moves := []uint64{}
+	captures := []uint64{}
 	row, col := GetRowCol(bin)
 	both := same|opp
 	var curr uint64
@@ -414,114 +436,132 @@ func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) {
 	if color == 1 {
 		curr = GetBinPos(row+1, col)
 		if curr&both == 0 {
-			res = append(res, curr)
+			moves = append(moves, curr)
 			if row == 1 {
 				curr = GetBinPos(row+2, col)
 				if curr&both == 0 {
-					res = append(res, curr)
+					moves = append(moves, curr)
 				}
 			}
 		}
 		if col > 0 {
 			curr = GetBinPos(row+1, col-1)
 			if curr&opp != 0 {
-				res = append(res, curr)
+				captures = append(captures, curr)
 			}
 		}
 		if col < 7 {
 			curr = GetBinPos(row+1, col+1)
 			if curr&opp != 0 {
-				res = append(res, curr)
+				captures = append(captures, curr)
 			}
 		}
 	} else {
 		curr = GetBinPos(row-1, col)
 		if curr&both == 0 {
-			res = append(res, curr)
+			moves = append(moves, curr)
 			if row == 6 {
 				curr = GetBinPos(row-2, col)
 				if curr&both == 0 {
-					res = append(res, curr)
+					moves = append(moves, curr)
 				}
 			}
 		}
 		if col > 0 {
 			curr = GetBinPos(row-1, col-1)
 			if curr&opp != 0 {
-				res = append(res, curr)
+				captures = append(captures, curr)
 			}
 		}
 		if col < 7 {
 			curr = GetBinPos(row-1, col+1)
 			if curr&opp != 0 {
-				res = append(res, curr)
+				captures = append(captures, curr)
 			}
 		}
 	}
-
-
-
+	return captures, moves
 }
 
-func KingMoves(bin uint64, same uint64) []uint64 {
-	res := []uint64{}
+func KingMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
+	moves := []uint64{}
+	captures := []uint64{}
 	row, col := GetRowCol(bin)
 	var curr uint64
 	curr = GetBinPos(row+1, col+1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row-1, col-1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row+1, col-1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row-1, col+1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row+1, col)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row, col+1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row-1, col)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
 	curr = GetBinPos(row, col-1)
-	if curr&same == 0{
-		res = append(res, curr)
+	if curr&opp != 0 {
+		captures = append(captures, curr)
+	} else if curr&same == 0{
+		moves = append(moves, curr)
 	}
-	return res
+	return captures, moves
 }
 
-func QueenMoves(bin uint64, same uint64, opp uint64) []uint64 {
-	res := RookMoves(bin, same, opp)
-	res = append(res, BishopMoves(bin, same, opp)...)
-	return res
+func QueenMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
+	captures, moves := RookMoves(bin, same, opp)
+	cap2, mov2 := BishopMoves(bin, same, opp)
+	captures = append(captures, cap2...)
+	moves = append(moves, mov2...)
+	return captures, moves
 }
 
-func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
-	res := []uint64{}
+func RookMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
+	moves := []uint64{}
+	captures := []uint64{}
 	row, col := GetRowCol(bin)
 	var curr, nr, nc uint64
 	nr = row+1
 	for nr < 8 {
 		curr = GetBinPos(nr, col)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr += 1
 	}
@@ -529,12 +569,12 @@ func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nr >= 0 {
 		curr = GetBinPos(nr, col)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr -= 1
 	}
@@ -542,12 +582,12 @@ func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nc < 8 {
 		curr = GetBinPos(row, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nc += 1
 	}
@@ -555,20 +595,21 @@ func RookMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nc >= 0 {
 		curr = GetBinPos(row, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nc -= 1
 	}
-	return res
+	return captures, moves
 }
 
-func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
-	res := []uint64{}
+func BishopMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
+	moves := []uint64{}
+	captures := []uint64{}
 	row, col := GetRowCol(bin)
 	var curr, nr, nc uint64
 	nr = row+1
@@ -576,12 +617,12 @@ func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nr < 8 && nc < 8 {
 		curr = GetBinPos(nr, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr += 1
 		nc += 1
@@ -591,12 +632,12 @@ func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nr >= 0 && nc >= 0 {
 		curr = GetBinPos(nr, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr += 1
 		nc += 1
@@ -606,12 +647,12 @@ func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nr < 8 && nc >= 0 {
 		curr = GetBinPos(nr, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr += 1
 		nc -= 1
@@ -621,36 +662,41 @@ func BishopMoves(bin uint64, same uint64, opp uint64) []uint64 {
 	for nr >= 0 && nc < 8 {
 		curr = GetBinPos(nr, nc)
 		if curr&opp != 0{
-			res = append(res, curr)
+			captures = append(captures, curr)
 			break
 		} else if curr&same != 0{
 			break
 		} else {
-			res = append(res, curr)
+			moves = append(moves, curr)
 		}
 		nr += 1
 		nc += 1
 	}
-	return res
+	return captures, moves
 
 }
  
-func KnightMoves(bin uint64, team uint64) []uint64 {
-	res := []uint64{}
+func KnightMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
+	moves := []uint64{}
+	captures := []uint64{}
 	row, col := GetRowCol(bin)
 	var curr, nr, nc uint64
 	nr = row+2
 	if nr < 8 {
 		if col-1 >= 0 {
 			curr = GetBinPos(nr, col-1)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 		if col+1 < 8 {
 			curr = GetBinPos(nr, col+1)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 	}
@@ -658,14 +704,18 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 	if nr < 8 {
 		if col-1 >= 0 {
 			curr = GetBinPos(nr, col-1)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 		if col+1 < 8 {
 			curr = GetBinPos(nr, col+1)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 	}
@@ -673,14 +723,18 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 	if nc < 8 {
 		if row-1 >= 0 {
 			curr = GetBinPos(row-1, nc)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 		if row+1 < 8 {
 			curr = GetBinPos(row+1, nc)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 	}
@@ -688,18 +742,22 @@ func KnightMoves(bin uint64, team uint64) []uint64 {
 	if nc >= 0 {
 		if row-1 >= 0 {
 			curr = GetBinPos(row-1, nc)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 		if row+1 < 8 {
 			curr = GetBinPos(row+1, nc)
-			if curr&team == 0 {
-				res = append(res, curr)
+			if curr&opp != 0 {
+				captures = append(captures, curr)
+			} else if curr&same == 0 {
+				moves = append(moves, curr)
 			}
 		}
 	}
-	return res
+	return captures, moves
 }
 
 func GetRowCol(bin uint64) (uint64, uint64) {
