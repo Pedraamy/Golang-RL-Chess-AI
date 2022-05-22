@@ -26,12 +26,10 @@ type State struct {
 	BB uint64
 	BN uint64
 	BP uint64
-	WKmoved uint8
-	BKmoved uint8
-	WLRmoved uint8
-	WRRmoved uint8
-	BLRmoved uint8
-	BRRmoved uint8
+	CastleWK uint8
+	CastleWQ uint8
+	CastleBK uint8
+	CastleBQ uint8
 	JustCastled uint8
 }
 
@@ -57,8 +55,7 @@ func NewBoard() *State {
 	var BB uint64 = 1<<58 | 1<<61
 	var BN uint64 = 1<<57 | 1<<62
 	var BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
-	var No uint8 = 0
-	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, No, No, No, No, No, No, No}
+	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, 1, 1, 1, 1, 0}
 }
 
 func NewMove(name uint8, piece uint64, start uint64, end uint64, castle uint8) *Move {
@@ -91,35 +88,38 @@ func (st *State) StateFromMoveWhite(mv *Move) *State {
 			ns.WK = 1<<1
 			ns.WR &= ^uint64(1)
 			ns.WR |= 1<<2
+			ns.JustCastled = 1
 		} else {
 			ns.WK = 1<<5
 			ns.WR &= ^uint64(1<<7)
 			ns.WR |= 1<<4
+			ns.JustCastled = 2
 		}
-		ns.JustCastled = 1
-		ns.WKmoved = 1
+		ns.CastleWK = 0
+		ns.CastleWQ = 0
 	} else {
 		np := mv.Piece&(^mv.Start)
 		np |= mv.End
 		ns.JustCastled = 0
-		if mv.Name == 0 {
+		if mv.Name == 6 {
 			ns.WK = np
-			ns.WKmoved = 1
-		} else if mv.Name == 1 {
+			ns.CastleWK = 0
+			ns.CastleWQ = 0
+		} else if mv.Name == 5 {
 			ns.WQ = np
-		} else if mv.Name == 2 {
+		} else if mv.Name == 4 {
 			ns.WR = np
 			if mv.Start == 1 {
-				ns.WLRmoved = 1
+				ns.CastleWK = 0
 			}
 			if mv.Start == 1<<7 {
-				ns.WRRmoved = 1
+				ns.CastleWQ = 0
 			}
 		} else if mv.Name == 3 {
 			ns.WB = np
-		} else if mv.Name == 4 {
+		} else if mv.Name == 2 {
 			ns.WN = np
-		} else {
+		} else if mv.Name == 1{
 			ns.WP = np
 		}
 		ns.BK &= ^mv.End
@@ -134,10 +134,7 @@ func (st *State) StateFromMoveWhite(mv *Move) *State {
 
 
 func (st *State) StateFromMoveBlack(mv *Move) *State {
-	np := mv.Piece&(^mv.Start)
-	np |= mv.End
 	ns := &State{}
-
 	copier.Copy(ns, st)
 	ns.White ^= 1
 
@@ -146,32 +143,38 @@ func (st *State) StateFromMoveBlack(mv *Move) *State {
 			ns.BK = 1<<57
 			ns.BR &= ^uint64(1<<56)
 			ns.BR |= 1<<58
+			ns.JustCastled = 1
 		} else {
 			ns.BK = 1<<61
 			ns.WR &= ^uint64(1<<63)
 			ns.WR |= 1<<60
+			ns.JustCastled = 2
 		}
-		ns.JustCastled = 1
-		ns.BKmoved = 1
+		ns.CastleBK = 0
+		ns.CastleBQ = 0
 	} else {
-		if mv.Name == 0 {
+		np := mv.Piece&(^mv.Start)
+		np |= mv.End
+		ns.JustCastled = 0
+		if mv.Name == 6 {
 			ns.BK = np
-			ns.BKmoved = 1
-		} else if mv.Name == 1 {
+			ns.CastleBK = 0
+			ns.CastleBQ = 0
+		} else if mv.Name == 5 {
 			ns.BQ = np
-		} else if mv.Name == 2 {
+		} else if mv.Name == 4 {
 			ns.BR = np
 			if mv.Start == 1<<56 {
-				ns.BLRmoved = 1
+				ns.CastleBK = 0
 			}
 			if mv.Start == 1<<63 {
-				ns.BRRmoved = 1
+				ns.CastleBQ = 0
 			}
 		} else if mv.Name == 3 {
 			ns.BB = np
-		} else if mv.Name == 4 {
+		} else if mv.Name == 2 {
 			ns.BN = np
-		} else {
+		} else if mv.Name == 1{
 			ns.BP = np
 		}
 		ns.WK &= ^mv.End
@@ -371,7 +374,7 @@ func GetPositionsFromBoard(piece uint64) []uint64 {
 }
 
 func (st *State) CanCastleKingWhite() bool {
-	if st.WKmoved == 1 || st.WLRmoved == 1 {
+	if st.CastleWK == 0 {
 		return false
 	}
 	white := st.AllWhitePieces()
@@ -385,7 +388,7 @@ func (st *State) CanCastleKingWhite() bool {
 }
 
 func (st *State) CanCastleQueenWhite() bool {
-	if st.WKmoved == 1 || st.WRRmoved == 1 {
+	if st.CastleWQ == 0 {
 		return false
 	}
 	white := st.AllWhitePieces()
@@ -399,7 +402,7 @@ func (st *State) CanCastleQueenWhite() bool {
 }
 
 func (st *State) CanCastleKingBlack() bool {
-	if st.BKmoved == 1 || st.BLRmoved == 1 {
+	if st.CastleBK == 0 {
 		return false
 	}
 	white := st.AllWhitePieces()
@@ -413,7 +416,7 @@ func (st *State) CanCastleKingBlack() bool {
 }
 
 func (st *State) CanCastleQueenBlack() bool {
-	if st.BKmoved == 1 || st.BRRmoved == 1 {
+	if st.CastleBQ == 0 {
 		return false
 	}
 	white := st.AllWhitePieces()
