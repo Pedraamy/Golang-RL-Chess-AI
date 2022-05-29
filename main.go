@@ -5,7 +5,7 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
-	"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
+	//"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
 	"fmt"
 	"strconv"
 
@@ -41,7 +41,8 @@ func main() {
 		fmt.Println(eval.Eval(board))
 		board = board.StateFromMove(bm)
 		i++ */
-	PlayComp()
+	//PlayComp()
+	PlayCompAsWhite()
 
 }
 
@@ -102,10 +103,36 @@ func Translate(start uint64, end uint64, castle uint8) string {
 
 }
 
-func PlayComp() {
+func PlayCompAsWhite() {
 	board := state.NewBoard()
 	var bm *state.Move
+	i := 0
+	for {
+		if board.WK == 0 {
+			fmt.Println("Black wins")
+			break
+		}
+		if board.BK == 0 {
+			fmt.Println("White wins")
+			break
+		}
+		if board.White == 1 {
+			bm = InputMove(board, 1)
+		} else {
+			bm = algo.BestMove(board, 6)
+		}
+		i++
+		fmt.Println(Translate(bm.Start, bm.End, bm.Castle))
+		fmt.Println(eval.Eval(board))
+		board = board.StateFromMove(bm)
+	}
+	return
+}
 
+func PlayCompAsBlack() {
+	board := state.NewBoard()
+	var bm *state.Move
+	i := 0
 	for {
 		if board.WK == 0 {
 			fmt.Println("Black wins")
@@ -120,6 +147,7 @@ func PlayComp() {
 		} else {
 			bm = InputMove(board, 0)
 		}
+		i++
 		fmt.Println(Translate(bm.Start, bm.End, bm.Castle))
 		fmt.Println(eval.Eval(board))
 		board = board.StateFromMove(bm)

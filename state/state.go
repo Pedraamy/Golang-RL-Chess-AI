@@ -42,19 +42,21 @@ type Move struct {
 }
 
 func NewBoard() *State {
-	var White uint8 = 1
-	var WK uint64 = 1<<3
-	var WQ uint64 = 1<<4
-	var WR uint64 = 1 | 1<<7
-	var WB uint64 = 1<<2 | 1<<5
-	var WN uint64 = 1<<1 | 1<<6
-	var WP uint64 = 1<<8|1<<9|1<<10|1<<11|1<<12|1<<13|1<<14|1<<15
-	var BK uint64 = 1<<59
-	var BQ uint64 = 1<<60
-	var BR uint64 = 1<<56 | 1<<63
-	var BB uint64 = 1<<58 | 1<<61
-	var BN uint64 = 1<<57 | 1<<62
-	var BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
+	var (
+		White uint8 = 1
+		WK uint64 = 1<<3
+		WQ uint64 = 1<<4
+		WR uint64 = 1 | 1<<7
+		WB uint64 = 1<<2 | 1<<5
+		WN uint64 = 1<<1 | 1<<6
+		WP uint64 = 1<<8|1<<9|1<<10|1<<11|1<<12|1<<13|1<<14|1<<15
+		BK uint64 = 1<<59
+		BQ uint64 = 1<<60
+		BR uint64 = 1<<56 | 1<<63
+		BB uint64 = 1<<58 | 1<<61
+		BN uint64 = 1<<57 | 1<<62
+		BP uint64 = 1<<48|1<<49|1<<50|1<<51|1<<52|1<<53|1<<54|1<<55
+	)
 	return &State{White, WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP, 1, 1, 1, 1, 0}
 }
 
@@ -213,10 +215,10 @@ func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
 	for _, k := range kings {
 		caps, movs := pieces.KingMoves(k, white, black)
 		for _, c := range caps {
-			captures = append(captures, NewMove(0, st.WK, k, c, 0))
+			captures = append(captures, NewMove(6, st.WK, k, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(0, st.WK, k, m, 0))
+			moves = append(moves, NewMove(6, st.WK, k, m, 0))
 		}
 	}
 	//Queens
@@ -224,10 +226,10 @@ func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
 	for _, q := range queens {
 		caps, movs := pieces.QueenMoves(q, white, black)
 		for _, c := range caps {
-			captures = append(captures, NewMove(1, st.WQ, q, c, 0))
+			captures = append(captures, NewMove(5, st.WQ, q, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(1, st.WQ, q, m, 0))
+			moves = append(moves, NewMove(5, st.WQ, q, m, 0))
 		}
 	}
 	//Rooks
@@ -235,10 +237,10 @@ func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
 	for _, r := range rooks {
 		caps, movs := pieces.RookMoves(r, white, black)
 		for _, c := range caps {
-			captures = append(captures, NewMove(2, st.WR, r, c, 0))
+			captures = append(captures, NewMove(4, st.WR, r, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(2, st.WR, r, m, 0))
+			moves = append(moves, NewMove(4, st.WR, r, m, 0))
 		}
 	}
 	//Bishops
@@ -257,10 +259,10 @@ func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
 	for _, n := range knights {
 		caps, movs := pieces.KnightMoves(n, white, black)
 		for _, c := range caps {
-			captures = append(captures, NewMove(4, st.WN, n, c, 0))
+			captures = append(captures, NewMove(2, st.WN, n, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(4, st.WN, n, m, 0))
+			moves = append(moves, NewMove(2, st.WN, n, m, 0))
 		}
 	}
 	//Pawns
@@ -268,10 +270,10 @@ func (st *State) GetAllMovesWhite() ([]*Move, []*Move) {
 	for _, p := range pawns {
 		caps, movs := pieces.PawnMoves(p, white, black, 1)
 		for _, c := range caps {
-			captures = append(captures, NewMove(5, st.WP, p, c, 0))
+			captures = append(captures, NewMove(1, st.WP, p, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(5, st.WP, p, m, 0))
+			moves = append(moves, NewMove(1, st.WP, p, m, 0))
 		}
 	}
 	return captures, moves
@@ -294,10 +296,10 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 	for _, k := range kings {
 		caps, movs := pieces.KingMoves(k, black, white)
 		for _, c := range caps {
-			captures = append(captures, NewMove(0, st.BK, k, c, 0))
+			captures = append(captures, NewMove(6, st.BK, k, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(0, st.BK, k, m, 0))
+			moves = append(moves, NewMove(6, st.BK, k, m, 0))
 		}
 	}
 	//Queens
@@ -305,10 +307,10 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 	for _, q := range queens {
 		caps, movs := pieces.QueenMoves(q, black, white)
 		for _, c := range caps {
-			captures = append(captures, NewMove(1, st.BQ, q, c, 0))
+			captures = append(captures, NewMove(5, st.BQ, q, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(1, st.BQ, q, m, 0))
+			moves = append(moves, NewMove(5, st.BQ, q, m, 0))
 		}
 	}
 	//Rooks
@@ -316,10 +318,10 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 	for _, r := range rooks {
 		caps, movs := pieces.RookMoves(r, black, white)
 		for _, c := range caps {
-			captures = append(captures, NewMove(2, st.BR, r, c, 0))
+			captures = append(captures, NewMove(4, st.BR, r, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(2, st.BR, r, m, 0))
+			moves = append(moves, NewMove(4, st.BR, r, m, 0))
 		}
 	}
 	//Bishops
@@ -338,10 +340,10 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 	for _, n := range knights {
 		caps, movs := pieces.KnightMoves(n, black, white)
 		for _, c := range caps {
-			captures = append(captures, NewMove(4, st.BN, n, c, 0))
+			captures = append(captures, NewMove(2, st.BN, n, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(4, st.BN, n, m, 0))
+			moves = append(moves, NewMove(2, st.BN, n, m, 0))
 		}
 	}
 	//Pawns
@@ -349,10 +351,10 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 	for _, p := range pawns {
 		caps, movs := pieces.PawnMoves(p, black, white, 0)
 		for _, c := range caps {
-			captures = append(captures, NewMove(5, st.BP, p, c, 0))
+			captures = append(captures, NewMove(1, st.BP, p, c, 0))
 		}
 		for _, m := range movs {
-			moves = append(moves, NewMove(5, st.BP, p, m, 0))
+			moves = append(moves, NewMove(1, st.BP, p, m, 0))
 		}
 	}
 

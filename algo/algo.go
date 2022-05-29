@@ -46,7 +46,7 @@ func BestMoveBlack (st *state.State, depth int) *state.Move {
 	total = append(total, moves...)
 	for _, m := range total {
 		ns = st.StateFromMove(m)
-		curr = MiniMaxWhite(ns, 100001, beta, depth-1)
+		curr = MiniMaxWhite(ns, -100001, beta, depth-1)
 		if curr < res {
 			res = curr
 			best = m

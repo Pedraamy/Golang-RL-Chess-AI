@@ -120,7 +120,7 @@ func KingMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
 			}
 		}
 	}
-	if col+1 >= 0 {
+	if col+1 < 8 {
 		curr = GetBinPos(row, col+1)
 		if curr&opp != 0 {
 			captures = append(captures, curr)
@@ -128,7 +128,7 @@ func KingMoves(bin uint64, same uint64, opp uint64) ([]uint64, []uint64) {
 			moves = append(moves, curr)
 		}
 	}
-	if col-1 < 8 {
+	if col-1 >= 0 {
 		curr = GetBinPos(row, col-1)
 		if curr&opp != 0 {
 			captures = append(captures, curr)
