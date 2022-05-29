@@ -5,6 +5,7 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/misch"
 	//"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
 	"fmt"
 	"strconv"
