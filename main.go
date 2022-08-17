@@ -7,8 +7,12 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/misch"
 	//"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/events"
+	"reflect"
 	"fmt"
 	"strconv"
+	//"encoding/json"
 
 
 )
@@ -43,8 +47,32 @@ func main() {
 		board = board.StateFromMove(bm)
 		i++ */
 	//PlayComp()
-	PlayCompAsWhite()
+	//PlayCompAsWhite()
+	lambda.Start(Handler)
 
+}
+
+type myReturn struct {
+    Response string `json:"response"`
+}
+
+func Handler(name events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+    fmt.Println(name.Body)
+	stringResp := name.Body + "***"
+	fmt.Println(reflect.TypeOf(name.Body))
+
+    return events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Access-Control-Allow-Origin": "*",
+			"Access-Control-Allow-Methods": "POST,GET",
+			"Access-Control-Allow-Headers" : "Content-Type,Accept"},
+			Body: stringResp}, nil
+}
+
+type InputEvent struct {
+	Name string `json:"name`
+	Age string `json:"age`
 }
 
 func Translate(start uint64, end uint64, castle uint8) string {
@@ -106,9 +134,11 @@ func Translate(start uint64, end uint64, castle uint8) string {
 
 func PlayCompAsWhite() {
 	board := state.NewBoard()
+	
 	var bm *state.Move
 	i := 0
 	for {
+		misch.PrintBoard(board)
 		if board.WK == 0 {
 			fmt.Println("Black wins")
 			break
@@ -182,21 +212,21 @@ func InputMove (st *state.State, color uint8) *state.Move {
 	fmt.Scan(&end)
 	end = 1<<end
 
-	if name == 0 {
+	if name == 6 {
 		if color == 0 {
 			piece = st.BK
 		} else {
 			piece = st.WK
 		}
 
-	} else if name == 1 {
+	} else if name == 5 {
 		if color == 0 {
 			piece = st.BQ
 		} else {
 			piece = st.WQ
 		}
 
-	} else if name == 2 {
+	} else if name == 4 {
 		if color == 0 {
 			piece = st.BR
 		} else {
@@ -210,7 +240,7 @@ func InputMove (st *state.State, color uint8) *state.Move {
 			piece = st.WB
 		}
 
-	} else if name == 4 {
+	} else if name == 2 {
 		if color == 0 {
 			piece = st.BN
 		} else {

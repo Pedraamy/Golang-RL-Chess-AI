@@ -6,7 +6,7 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/values"
 )
 
-func Eval(st *state.State) int {
+func Later(st *state.State) int {
 	/* wpawns := pieces.GetPiecesFromBoard(st.WP)
 	bpawns := pieces.GetPiecesFromBoard(st.BP)
 	wknights := pieces.GetPiecesFromBoard(st.WN)
@@ -19,10 +19,11 @@ func Eval(st *state.State) int {
 	bqueens := pieces.GetPiecesFromBoard(st.BQ)
 	wking := pieces.GetPiecesFromBoard(st.WK)
 	bking := pieces.GetPiecesFromBoard(st.BK) */
-	return PieceValues(st)
+	//return PieceValues(st)
+	return 5
 }
 
-func PieceValues(st *state.State) int {
+func Eval(st *state.State) int {
 	res := 0
 	wpawns := pieces.GetPiecesFromBoard(st.WP)
 	res += values.Pawn * len(wpawns)
@@ -94,6 +95,54 @@ func PieceValues(st *state.State) int {
 		idx := pieces.PosTable[p]
 		res -= values.BKing[idx]
 	}
+
+	res += EarlyQueenDev(st)
+	res += BishopPairAdv(wbishops, bbishops)
+
 	return res
 
+}
+
+func EarlyQueenDev(st *state.State) int {
+	res := 0
+	if st.WQ&(1<<4) == 0 {
+		if st.WB&(1<<2) != 0 {
+			res -= 12
+		}
+		if st.WB&(1<<5) != 0 {
+			res -= 12
+		}
+		if st.WN&(1<<1) != 0 {
+			res -= 12
+		}
+		if st.WN&(1<<6) != 0 {
+			res -= 12
+		}
+	}
+	if st.BQ&(1<<4) == 0 {
+		if st.BB&(1<<58) != 0 {
+			res -= 12
+		}
+		if st.BB&(1<<61) != 0 {
+			res -= 12
+		}
+		if st.BN&(1<<57) != 0 {
+			res -= 12
+		}
+		if st.BN&(1<<62) != 0 {
+			res -= 12
+		}
+	}
+	return res
+}
+
+func BishopPairAdv(wbishops []uint64, bbishops []uint64) int {
+	res := 0
+	if len(wbishops) == 2 {
+		res += 60
+	}
+	if len(bbishops) == 2 {
+		res -= 60
+	}
+	return res
 }

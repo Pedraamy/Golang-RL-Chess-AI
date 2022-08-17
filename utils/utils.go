@@ -2,21 +2,38 @@ package utils
 
 import (
 	"strings"
+	"strconv"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
+	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
 )
 
+func BestMoveFromFen (fen string) string {
+	boardState := StateFromFen(fen)
+	bestMove := algo.BestMove(boardState, 5)
+	posTable := pieces.PosTable
+	begin := posTable[bestMove.Start]
+	end := posTable[bestMove.Start]
+	beginStr := strconv.FormatUint(begin, 10)
+	endStr := strconv.FormatUint(end, 10)
+	stringResponse := beginStr + "," + endStr
+	if bestMove.Castle == 1 {
+		stringResponse = "K"
+	} else if bestMove.Castle == 2{
+		stringResponse = "Q"
+	}
+	return stringResponse
+} 
 
-func TokenizeFen(fen string) []string {
-	tokens := strings.Split(fen, " ")
-	return tokens
+
+func StateFromFen (fen string) *state.State {
+	arr := strings.Split(fen, "/")
+	boardString, castles, color := arr[0], arr[1], arr[2]
+	board := BoardFromString(boardString)
+	return BoardToState(board, castles, color)
 }
 
-func FenToArr (fen string) {
-	//tokens := strings.Split(fen, " ")
-
-}
-
-func StateFromFen(board [64]int, color string, castles string) *state.State {
+func BoardToState(board [64]int, castles string, color string) *state.State {
 	var (
 		White uint8 = 0
 		WK uint64 = 0
@@ -84,18 +101,11 @@ func StateFromFen(board [64]int, color string, castles string) *state.State {
 
 }
 
-func BoardFromString (s string) [64]int {
+func BoardFromString (boardString string) [64]int {
 	board := [64]int{}
-	pos := 0
-	for i := 0; i < len(s); i++ {
-		curr := int(s[i])
-		if curr == 47 {
-			continue
-		} else if curr >= 48 && curr <= 57 {
-			pos += curr
-		} else {
-			board[pos] = curr
-			pos++
+	for i := 0; i<64; i++ {
+		if boardString[i] != 32 {
+			board[i] = int(boardString[i])
 		}
 	}
 	board = RotateArr180(board)

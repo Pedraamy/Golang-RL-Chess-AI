@@ -18,49 +18,56 @@ func PawnMoves(bin uint64, same uint64, opp uint64, color uint8) ([]uint64, []ui
 	var curr uint64
 
 	if color == 1 {
-		curr = GetBinPos(row+1, col)
-		if curr&both == 0 {
-			moves = append(moves, curr)
-			if row == 1 {
-				curr = GetBinPos(row+2, col)
-				if curr&both == 0 {
-					moves = append(moves, curr)
+		if row < 6 {
+			curr = GetBinPos(row+1, col)
+			if curr&both == 0 {
+				moves = append(moves, curr)
+				if row == 6 {
+	
+				}
+				if row == 1 {
+					curr = GetBinPos(row+2, col)
+					if curr&both == 0 {
+						moves = append(moves, curr)
+					}
 				}
 			}
-		}
-		if col > 0 {
-			curr = GetBinPos(row+1, col-1)
-			if curr&opp != 0 {
-				captures = append(captures, curr)
+			if col > 0 {
+				curr = GetBinPos(row+1, col-1)
+				if curr&opp != 0 {
+					captures = append(captures, curr)
+				}
 			}
-		}
-		if col < 7 {
-			curr = GetBinPos(row+1, col+1)
-			if curr&opp != 0 {
-				captures = append(captures, curr)
-			}
+			if col < 7 {
+				curr = GetBinPos(row+1, col+1)
+				if curr&opp != 0 {
+					captures = append(captures, curr)
+				}
+			}	
 		}
 	} else {
-		curr = GetBinPos(row-1, col)
-		if curr&both == 0 {
-			moves = append(moves, curr)
-			if row == 6 {
-				curr = GetBinPos(row-2, col)
-				if curr&both == 0 {
-					moves = append(moves, curr)
+		if row > 1 {
+			curr = GetBinPos(row-1, col)
+			if curr&both == 0 {
+				moves = append(moves, curr)
+				if row == 6 {
+					curr = GetBinPos(row-2, col)
+					if curr&both == 0 {
+						moves = append(moves, curr)
+					}
 				}
 			}
-		}
-		if col > 0 {
-			curr = GetBinPos(row-1, col-1)
-			if curr&opp != 0 {
-				captures = append(captures, curr)
+			if col > 0 {
+				curr = GetBinPos(row-1, col-1)
+				if curr&opp != 0 {
+					captures = append(captures, curr)
+				}
 			}
-		}
-		if col < 7 {
-			curr = GetBinPos(row-1, col+1)
-			if curr&opp != 0 {
-				captures = append(captures, curr)
+			if col < 7 {
+				curr = GetBinPos(row-1, col+1)
+				if curr&opp != 0 {
+					captures = append(captures, curr)
+				}
 			}
 		}
 	}
