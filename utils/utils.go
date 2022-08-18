@@ -6,14 +6,16 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
+	//"github.com/Pedraamy/Golang-RL-Chess-AI/misch"
+	"fmt"
 )
 
 func BestMoveFromFen (fen string) string {
 	boardState := StateFromFen(fen)
-	bestMove := algo.BestMove(boardState, 5)
+	bestMove := algo.BestMove(boardState, 4)
 	posTable := pieces.PosTable
-	begin := posTable[bestMove.Start]
-	end := posTable[bestMove.Start]
+	begin := 63-posTable[bestMove.Start]
+	end := 63-posTable[bestMove.End]
 	beginStr := strconv.FormatUint(begin, 10)
 	endStr := strconv.FormatUint(end, 10)
 	stringResponse := beginStr + "," + endStr
@@ -22,6 +24,7 @@ func BestMoveFromFen (fen string) string {
 	} else if bestMove.Castle == 2{
 		stringResponse = "Q"
 	}
+	fmt.Println(stringResponse)
 	return stringResponse
 } 
 

@@ -1,27 +1,23 @@
 package main
 
 import (
+	"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/state"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/algo"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/pieces"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
 	"github.com/Pedraamy/Golang-RL-Chess-AI/misch"
-	//"github.com/Pedraamy/Golang-RL-Chess-AI/utils"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/events"
-	"reflect"
 	"fmt"
 	"strconv"
-	//"encoding/json"
+	"encoding/json"
 
 
 )
 
 
 func main() {
-
-	
-
 	/* board := state.NewBoard()
 	white := board.AllWhitePieces()
 	black := board.AllBlackPieces()
@@ -49,31 +45,33 @@ func main() {
 	//PlayComp()
 	//PlayCompAsWhite()
 	lambda.Start(Handler)
+	//fen := "rnbqkbnrpppppppp                    P           PPPP PPPRNBQKBNR/KQkq/b"
+	//fmt.Println(utils.BestMoveFromFen(fen))
 
 }
 
-type myReturn struct {
-    Response string `json:"response"`
-}
+func Handler(input events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+/*     fmt.Println(input.Body)
+	var jsonMap map[string]string
+	json.Unmarshal([]byte(input.Body), &jsonMap)
+	
+	fen := jsonMap["boardState"]
+	moveResponse := utils.BestMoveFromFen(fen) */
 
-func Handler(name events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-    fmt.Println(name.Body)
-	stringResp := name.Body + "***"
-	fmt.Println(reflect.TypeOf(name.Body))
+	var jsonMap map[string]string
+	json.Unmarshal([]byte(input.Body), &jsonMap)
+	fen := jsonMap["boardState"]
+	moveResponse := utils.BestMoveFromFen(fen)
 
     return events.APIGatewayProxyResponse{
 		StatusCode: 200,
 		Headers: map[string]string{
 			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Allow-Methods": "POST,GET",
+			"Access-Control-Allow-Methods": ", OPTIONS,POST,GET",
 			"Access-Control-Allow-Headers" : "Content-Type,Accept"},
-			Body: stringResp}, nil
+			Body: moveResponse}, nil
 }
 
-type InputEvent struct {
-	Name string `json:"name`
-	Age string `json:"age`
-}
 
 func Translate(start uint64, end uint64, castle uint8) string {
 	if castle == 1 {

@@ -121,16 +121,16 @@ func EarlyQueenDev(st *state.State) int {
 	}
 	if st.BQ&(1<<4) == 0 {
 		if st.BB&(1<<58) != 0 {
-			res -= 12
+			res += 12
 		}
 		if st.BB&(1<<61) != 0 {
-			res -= 12
+			res += 12
 		}
 		if st.BN&(1<<57) != 0 {
-			res -= 12
+			res += 12
 		}
 		if st.BN&(1<<62) != 0 {
-			res -= 12
+			res += 12
 		}
 	}
 	return res
