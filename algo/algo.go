@@ -5,6 +5,7 @@ import (
 	"github.com/Pedraamy/Golang-RL-Chess-AI/eval"
 	"math/rand"
     "time"
+	//"fmt"
 )
 
 
@@ -22,8 +23,8 @@ func BestMoveWhite (st *state.State, depth int) *state.Move {
 	var res int = -100001
 	var curr int
 	var ns *state.State
-	total, moves := st.GetAllMoves()
-	total = append(total, moves...)
+	captures, moves := st.GetAllMoves()
+	total := append(captures, moves...)
 	for _, m := range total {
 		ns = st.StateFromMove(m)
 		curr = MiniMaxBlack(ns, alpha, 100001, depth-1)
@@ -42,8 +43,8 @@ func BestMoveBlack (st *state.State, depth int) *state.Move {
 	var res int = 100001
 	var curr int
 	var ns *state.State
-	total, moves := st.GetAllMoves()
-	total = append(total, moves...)
+	captures, moves := st.GetAllMoves()
+	total := append(captures, moves...)
 	for _, m := range total {
 		ns = st.StateFromMove(m)
 		curr = MiniMaxWhite(ns, -100001, beta, depth-1)
@@ -66,8 +67,8 @@ func MiniMaxWhite(st *state.State, alpha int, beta int, depth int) int {
 	var res int = -100001
 	var curr int
 	var ns *state.State
-	total, moves := st.GetAllMoves()
-	total = append(total, moves...)
+	captures, moves := st.GetAllMoves()
+	total := append(captures, moves...)
 	if len(total) == 0 {
 		return 0
 	}
@@ -94,8 +95,8 @@ func MiniMaxBlack(st *state.State, alpha int, beta int, depth int) int {
 	var res int = 100001
 	var curr int
 	var ns *state.State
-	total, moves := st.GetAllMoves()
-	total = append(total, moves...)
+	captures, moves := st.GetAllMoves()
+	total := append(captures, moves...)
 	if len(total) == 0 {
 		return 0
 	}
@@ -108,9 +109,66 @@ func MiniMaxBlack(st *state.State, alpha int, beta int, depth int) int {
 			return res
 		}
 	}
-	return res
-	
+	return res	
 }
+
+func QuiescenceSearch(st *state.State, alpha int, beta int) int {
+	if st.White == 1 {
+		return QuiescenceSearchWhite(st, alpha, beta, 0)
+	} else {
+		return QuiescenceSearchBlack(st, alpha, beta, 0)
+	}
+}
+
+func QuiescenceSearchWhite(st *state.State, alpha int, beta int, depth int) int {
+	if st.WK == 0 {
+		return -100000
+	}
+	captures, _ := st.GetAllMoves()
+	if len(captures) == 0 || depth == 2{
+		return eval.Eval(st)
+	}
+	var res int = -100001
+	var curr int
+	var ns *state.State
+	for _, c := range captures {
+		ns = st.StateFromMove(c)
+		curr = QuiescenceSearchBlack(ns, alpha, beta, depth+1)
+		res = Max2(res, curr)
+		alpha = Max2(alpha, res)
+		if alpha >= beta {
+			return res
+		}
+	}
+	return res
+}
+
+func QuiescenceSearchBlack(st *state.State, alpha int, beta int, depth int) int {
+	if st.BK == 0 {
+		return 100000
+	}
+	captures, _ := st.GetAllMoves()
+	if len(captures) == 0 || depth == 6{
+		return eval.Eval(st)
+	}
+	var res int = 100001
+	var curr int
+	var ns *state.State
+	for _, c := range captures {
+		ns = st.StateFromMove(c)
+		curr = QuiescenceSearchWhite(ns, alpha, beta, depth+1)
+		res = Min2(res, curr)
+		beta = Min2(beta, res)
+		if beta <= alpha {
+			return res
+		}
+	}
+	return res
+}
+
+
+
+
 /* func MiniMaxWhite(st *state.State, alpha float64, beta float64, depth int) float64 {
 	if depth == 0{
 		return Eval(st)
@@ -201,6 +259,8 @@ func MiniMaxBlack(st *state.State, alpha int, beta int, depth int) int {
 	}
 	return res
 }
+
+
 
 func MiniMaxBlack(st *State, depth int) {
 	if depth == 0{
@@ -361,8 +421,8 @@ func Eval(st *state.State) float64 {
 } */
 
 func RandomMove(st *state.State) *state.Move {
-	total, moves := st.GetAllMoves()
-	total = append(total, moves...)
+	captures, moves := st.GetAllMoves()
+	total := append(captures, moves...)
 	rand.Seed(time.Now().UnixNano())
 	idx := rand.Intn(len(total))
 	return total[idx]

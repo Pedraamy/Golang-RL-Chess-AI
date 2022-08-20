@@ -386,7 +386,6 @@ func (st *State) GetAllMovesBlack() ([]*Move, []*Move) {
 			moves = append(moves, NewMove(1, st.BP, p, m, 0))
 		}
 	}
-
 	return captures, moves
 }
 
