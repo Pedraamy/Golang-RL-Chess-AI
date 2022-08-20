@@ -51,13 +51,6 @@ func main() {
 }
 
 func Handler(input events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-/*     fmt.Println(input.Body)
-	var jsonMap map[string]string
-	json.Unmarshal([]byte(input.Body), &jsonMap)
-	
-	fen := jsonMap["boardState"]
-	moveResponse := utils.BestMoveFromFen(fen) */
-
 	var jsonMap map[string]string
 	json.Unmarshal([]byte(input.Body), &jsonMap)
 	fen := jsonMap["boardState"]
