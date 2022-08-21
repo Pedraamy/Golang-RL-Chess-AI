@@ -10,6 +10,8 @@ import (
 	"fmt"
 )
 
+var promoMap = map[uint8]string {7: "Knight", 8: "Bishop", 9: "Rook", 10: "Queen"}
+
 func BestMoveFromFen (fen string) string {
 	boardState := StateFromFen(fen)
 	bestMove := algo.BestMove(boardState, 4)
@@ -23,6 +25,14 @@ func BestMoveFromFen (fen string) string {
 		stringResponse = "K"
 	} else if bestMove.Castle == 2{
 		stringResponse = "Q"
+	} else if bestMove.Name >= 7 {
+		stringResponse += ","
+		if boardState.White == 1 {
+			stringResponse += "w"
+		} else {
+			stringResponse += "b"
+		}
+		stringResponse += promoMap[bestMove.Name]
 	}
 	fmt.Println(stringResponse)
 	return stringResponse
